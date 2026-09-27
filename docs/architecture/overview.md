@@ -76,7 +76,7 @@ Sin barrels `index.ts`: mezclar exports de cliente y servidor filtra código al 
 ## Reglas de dependencias
 
 - `app/` → `features/`, `components/`, `lib/`, `server/auth`. Nunca `server/db`.
-- `features/x` → `server/`, `lib/`, `components/`. De otra feature solo importa `features/y/server/queries.ts` o `types.ts`.
+- `features/x` → `server/`, `lib/`, `components/`. De otra feature solo importa `features/y/server/queries.ts`, `types.ts` o `features/notifications/server/notify.ts` (emails).
 - `server/` → solo `lib/`.
 - `components/` y `lib/` no importan dominio.
 
@@ -138,6 +138,22 @@ aparezca una segunda feature, añade una zona por feature con `except` para su
 - Admin: `/admin/inscripciones` (bandeja) y `/admin/inscripciones/[id]` (comprobante,
   aviso si el monto no coincide, aprobar/rechazar con motivos rápidos del §10).
 
+## Emails (Resend)
+
+- `server/email/`: plantilla HTML con estilos inline (`layout.ts`) y `sendEmail()`
+  (`send.ts`), que nunca lanza errores y, sin `RESEND_API_KEY`, solo escribe en consola.
+- `features/notifications/server/notify.ts`: un email por evento (§11, §31).
+  Las actions los llaman con `after()` para no demorar la respuesta.
+- Eventos: bienvenida (perfil completo), inscripción enviada (competidor + admins),
+  inscripción aprobada/rechazada, video recibido (competidor + admins) y video
+  aprobado con resultado / rechazado con motivo.
+- Los destinatarios admin salen de `profiles.role = 'admin'`.
+- `EMAIL_FROM` debe ser de un dominio verificado en Resend; `onboarding@resend.dev`
+  solo entrega al email dueño de la cuenta de Resend.
+- Los emails de Supabase Auth (confirmar cuenta, recuperar contraseña) se envían
+  con SMTP personalizado: Supabase → Authentication → Emails → SMTP Settings con
+  `smtp.resend.com`, puerto 465, usuario `resend` y la API key como contraseña.
+
 ## Pendiente
 
-- Crear cuenta Resend (dominio verificado) antes de los emails de la Fase 2.
+- Verificar un dominio en Resend y configurarlo como SMTP de Supabase Auth.

@@ -3,10 +3,12 @@
 import type { FormState } from "./form-state";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireProfile, verifySession } from "@/server/auth/dal";
+import { notifyWelcome } from "@/features/notifications/server/notify";
 import { ROUTES } from "@/lib/constants";
 
 import { profileSchema } from "./schemas";
@@ -46,6 +48,10 @@ export async function completeOnboardingAction(
     if (isUniqueViolation(error)) return USERNAME_TAKEN;
     throw error;
   }
+
+  after(() =>
+    notifyWelcome({ firstName: parsed.data.firstName, email: session.email }),
+  );
 
   redirect(ROUTES.dashboard);
 }

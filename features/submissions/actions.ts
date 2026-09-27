@@ -1,8 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 
+import { notifyVideoSubmitted } from "@/features/notifications/server/notify";
 import { MAX_VIDEO_BYTES, ROUTES } from "@/lib/constants";
 import { requireProfile } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
@@ -100,15 +102,28 @@ export async function confirmVideoUploadAction(
     };
   }
 
-  await db.insert(submissions).values({
-    challengeId: active.challenge.id,
-    userId: profile.id,
-    attemptNumber: nextAttempt,
-    videoPath: path,
-    fileSize: size,
-    mimeType: type,
-    durationMs,
-  });
+  const [created] = await db
+    .insert(submissions)
+    .values({
+      challengeId: active.challenge.id,
+      userId: profile.id,
+      attemptNumber: nextAttempt,
+      videoPath: path,
+      fileSize: size,
+      mimeType: type,
+      durationMs,
+    })
+    .returning({ id: submissions.id });
+
+  after(() =>
+    notifyVideoSubmitted({
+      submissionId: created.id,
+      competitor: profile,
+      weekNumber: active.week.weekNumber,
+      challengeName: active.challenge.name,
+      attemptNumber: nextAttempt,
+    }),
+  );
 
   revalidatePath(ROUTES.videos);
   revalidatePath(ROUTES.dashboard);

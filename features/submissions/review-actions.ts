@@ -5,8 +5,10 @@ import type { FormState } from "@/features/users/form-state";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { z } from "zod";
 
+import { notifyVideoReviewed } from "@/features/notifications/server/notify";
 import { ROUTES } from "@/lib/constants";
 import { requireRole } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
@@ -57,21 +59,24 @@ export async function reviewSubmissionAction(
 
   if (!current) return { message: "El video ya no existe." };
 
-  const reviewed = { reviewedBy: admin.id, reviewedAt: new Date() };
+  let result: {
+    status: "approved" | "rejected";
+    rawTimeMs: number | null;
+    penaltyMs: number | null;
+    finalTimeMs: number | null;
+    penalties: { exercise: string; count: number; seconds: number }[];
+    reviewerNotes: string | null;
+  };
 
   if (parsed.data.decision === "reject") {
-    await db
-      .update(submissions)
-      .set({
-        ...reviewed,
-        status: "rejected",
-        rawTimeMs: null,
-        penaltyMs: null,
-        finalTimeMs: null,
-        penalties: [],
-        reviewerNotes: parsed.data.notes,
-      })
-      .where(eq(submissions.id, submissionId));
+    result = {
+      status: "rejected",
+      rawTimeMs: null,
+      penaltyMs: null,
+      finalTimeMs: null,
+      penalties: [],
+      reviewerNotes: parsed.data.notes,
+    };
   } else {
     // Penalizaciones calculadas en el servidor a partir de la config del reto
     const penalties = current.exercises
@@ -89,19 +94,33 @@ export async function reviewSubmissionAction(
       0,
     );
 
-    await db
-      .update(submissions)
-      .set({
-        ...reviewed,
-        status: "approved",
-        rawTimeMs: parsed.data.rawTime,
-        penaltyMs,
-        penalties,
-        finalTimeMs: parsed.data.rawTime + penaltyMs,
-        reviewerNotes: parsed.data.notes || null,
-      })
-      .where(eq(submissions.id, submissionId));
+    result = {
+      status: "approved",
+      rawTimeMs: parsed.data.rawTime,
+      penaltyMs,
+      penalties,
+      finalTimeMs: parsed.data.rawTime + penaltyMs,
+      reviewerNotes: parsed.data.notes || null,
+    };
   }
+
+  await db
+    .update(submissions)
+    .set({ ...result, reviewedBy: admin.id, reviewedAt: new Date() })
+    .where(eq(submissions.id, submissionId));
+
+  after(() =>
+    notifyVideoReviewed({
+      competitor: { firstName: current.firstName, email: current.email },
+      weekNumber: current.weekNumber,
+      challengeName: current.challengeName,
+      approved: result.status === "approved",
+      rawTimeMs: result.rawTimeMs,
+      penaltyMs: result.penaltyMs,
+      finalTimeMs: result.finalTimeMs,
+      notes: result.reviewerNotes,
+    }),
+  );
 
   revalidatePath(ROUTES.admin, "layout");
   revalidatePath(ROUTES.dashboard, "layout");

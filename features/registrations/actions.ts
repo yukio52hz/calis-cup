@@ -3,10 +3,15 @@
 import type { FormState } from "@/features/users/form-state";
 
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 
+import {
+  notifyRegistrationReviewed,
+  notifyRegistrationSubmitted,
+} from "@/features/notifications/server/notify";
 import { getActiveTournament } from "@/features/submissions/server/queries";
 import { MAX_RECEIPT_BYTES, ROUTES } from "@/lib/constants";
 import { requireProfile, requireRole } from "@/server/auth/dal";
@@ -114,7 +119,7 @@ export async function submitRegistrationAction(
     return { errors: { receiptPath: ["Vuelve a subir el comprobante."] } };
   }
 
-  await db.transaction(async (tx) => {
+  const registrationId = await db.transaction(async (tx) => {
     const [created] = await tx
       .insert(payments)
       .values({
@@ -135,16 +140,25 @@ export async function submitRegistrationAction(
       reviewedAt: null,
     };
 
-    await tx
+    const [registration] = await tx
       .insert(registrations)
       .values({ ...values, tournamentId: tournament.id, userId: profile.id })
       .onConflictDoUpdate({
         target: [registrations.tournamentId, registrations.userId],
         set: values,
-      });
+      })
+      .returning({ id: registrations.id });
+
+    return registration.id;
   });
 
-  // TODO(emails): avisar al admin (§11)
+  after(() =>
+    notifyRegistrationSubmitted({
+      registrationId,
+      competitor: profile,
+      payment,
+    }),
+  );
   revalidatePath(ROUTES.dashboard, "layout");
   redirect(ROUTES.enroll);
 }
@@ -200,7 +214,13 @@ export async function reviewRegistrationAction(
     }
   });
 
-  // TODO(emails): avisar al competidor (§11)
+  after(() =>
+    notifyRegistrationReviewed({
+      competitor: { firstName: current.firstName, email: current.email },
+      approved,
+      reason,
+    }),
+  );
   revalidatePath(ROUTES.admin, "layout");
   revalidatePath(ROUTES.dashboard, "layout");
 

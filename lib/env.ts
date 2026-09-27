@@ -16,6 +16,13 @@ const envSchema = z.object({
   SUPABASE_SECRET_KEY: z
     .string()
     .startsWith("sb_secret_", "Debe ser la secret key (sb_secret_…)"),
+  // URL pública de la app, para los enlaces de los emails
+  APP_URL: z.url().default("http://localhost:3000"),
+  // Resend: sin clave, los emails se registran en consola y no se envían
+  RESEND_API_KEY: z.string().startsWith("re_").optional(),
+  // Remitente de un dominio verificado en Resend. onboarding@resend.dev solo
+  // entrega al email dueño de la cuenta de Resend (útil para probar).
+  EMAIL_FROM: z.string().default("Calis Cup <onboarding@resend.dev>"),
   // Emails separados por coma que reciben rol admin al crear su perfil.
   ADMIN_EMAILS: z
     .string()
