@@ -254,3 +254,76 @@ export async function notifyChallengePublished(input: {
     },
   );
 }
+
+// §28: solicitud de video extra (admins)
+export async function notifyExtraRequested(input: {
+  extraId: string;
+  competitor: Competitor;
+  tournamentName: string;
+  weekNumber: number;
+  challengeName: string;
+  bestTimeMs: number;
+  payment: { amount: number; reference: string; paidOn: string };
+}) {
+  const { competitor, payment } = input;
+  const name = `${competitor.firstName} ${competitor.lastName}`;
+
+  await sendEmail(await adminEmails(), {
+    subject: "Nueva solicitud de video extra",
+    preheader: `${name} ha solicitado un video extra para la Semana ${input.weekNumber}.`,
+    title: "Nueva solicitud de video extra",
+    paragraphs: [
+      `${name} ha solicitado un video extra para la Semana ${input.weekNumber}.`,
+    ],
+    details: [
+      ["Competidor", name],
+      ["Categoría", CATEGORY_LABELS[competitor.category]],
+      ["Torneo", input.tournamentName],
+      ["Semana", `${input.weekNumber} · ${input.challengeName}`],
+      ["Resultado actual", formatDuration(input.bestTimeMs)],
+      ["Monto", formatColones(payment.amount)],
+      ["Referencia SINPE", payment.reference],
+      ["Fecha del pago", payment.paidOn],
+    ],
+    cta: {
+      label: "Revisar solicitud",
+      url: url(`${ROUTES.adminExtras}/${input.extraId}`),
+    },
+  });
+}
+
+// §28: video extra aprobado o rechazado (competidor)
+export async function notifyExtraReviewed(input: {
+  competitor: Pick<Competitor, "firstName" | "email">;
+  weekNumber: number;
+  approved: boolean;
+  reason: string | null;
+}) {
+  const { competitor } = input;
+
+  if (input.approved) {
+    await sendEmail(competitor.email, {
+      subject: "Video extra aprobado",
+      preheader: "Ya puedes realizar un nuevo intento.",
+      title: "Video extra aprobado",
+      paragraphs: [
+        `Hola, ${competitor.firstName}. Tu pago fue aprobado. Ya puedes realizar un nuevo intento para mejorar tu resultado de la Semana ${input.weekNumber}.`,
+      ],
+      cta: { label: "Subir nuevo video", url: url(ROUTES.videos) },
+    });
+
+    return;
+  }
+
+  await sendEmail(competitor.email, {
+    subject: "Video extra no aprobado",
+    preheader: "No fue posible aprobar tu solicitud.",
+    title: "Video extra no aprobado",
+    paragraphs: [
+      `Hola, ${competitor.firstName}. No fue posible aprobar tu solicitud de video extra.`,
+      "Revisa el motivo y, si la semana sigue abierta, puedes volver a enviarla.",
+    ],
+    note: input.reason ? { label: "Motivo", text: input.reason } : undefined,
+    cta: { label: "Volver a intentar", url: url(ROUTES.extraVideo) },
+  });
+}

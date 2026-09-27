@@ -62,7 +62,9 @@ export default async function VideosPage() {
 
       {eligibility.ok ? (
         <Card>
-          <CardTitle eyebrow={`INTENTO #${eligibility.nextAttempt}`}>
+          <CardTitle
+            eyebrow={`INTENTO #${eligibility.nextAttempt}${eligibility.extraAttemptId ? " · VIDEO EXTRA" : ""}`}
+          >
             Sube tu video
           </CardTitle>
           <ul className="mb-4 flex flex-col gap-1.5 text-sm text-muted">
@@ -71,6 +73,17 @@ export default async function VideosPage() {
             <li>• Que se vea todo tu cuerpo durante el set.</li>
           </ul>
           <VideoUploader />
+        </Card>
+      ) : eligibility.reason === "extra_pending" ? (
+        // §27: subida bloqueada hasta que se apruebe el pago del video extra
+        <Card className="flex flex-col items-center gap-3 border-warning/30 bg-warning/5 py-8 text-center">
+          <StatusBadge tone="warning">Pendiente de aprobación</StatusBadge>
+          <p className="flex items-center gap-2 font-bold text-muted">
+            <LockIcon className="h-4 w-4" /> Subir video extra
+          </p>
+          <p className="max-w-sm text-sm text-muted">
+            {BLOCKED_MESSAGES.extra_pending}
+          </p>
         </Card>
       ) : latest ? (
         // Estado del envío de la semana (§17)
@@ -84,6 +97,15 @@ export default async function VideosPage() {
               ? `Tu resultado final: ${formatDuration(latest.finalTimeMs)}.`
               : "Tu video fue recibido correctamente. Te notificaremos cuando sea revisado."}
           </p>
+          {latest.status === "approved" && (
+            // §25: ofrecer un intento extra para mejorar el resultado
+            <NextLink
+              className="button button--tertiary button--md rounded-xl font-bold"
+              href={ROUTES.extraVideo}
+            >
+              ¿Quieres mejorar tu tiempo? Video extra
+            </NextLink>
+          )}
         </Card>
       ) : (
         <Card className="flex flex-col items-center gap-3 py-8 text-center">

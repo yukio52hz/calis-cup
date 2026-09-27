@@ -1,5 +1,6 @@
 "use server";
 
+import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { z } from "zod";
@@ -8,7 +9,7 @@ import { notifyVideoSubmitted } from "@/features/notifications/server/notify";
 import { MAX_VIDEO_BYTES, ROUTES } from "@/lib/constants";
 import { requireProfile } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
-import { submissions } from "@/server/db/schema";
+import { extraAttempts, submissions } from "@/server/db/schema";
 import { createUploadUrl, fileExists } from "@/server/storage/files";
 
 import { BLOCKED_MESSAGES, getUploadEligibility } from "./server/eligibility";
@@ -84,7 +85,7 @@ export async function confirmVideoUploadAction(
     return { ok: false, message: BLOCKED_MESSAGES[eligibility.reason] };
   }
 
-  const { tournamentId, active, nextAttempt } = eligibility;
+  const { tournamentId, active, nextAttempt, extraAttemptId } = eligibility;
   const { path, size, type, durationMs } = parsed.data;
 
   // La ruta tiene que ser de la carpeta de este usuario y de esta semana
@@ -102,18 +103,30 @@ export async function confirmVideoUploadAction(
     };
   }
 
-  const [created] = await db
-    .insert(submissions)
-    .values({
-      challengeId: active.challenge.id,
-      userId: profile.id,
-      attemptNumber: nextAttempt,
-      videoPath: path,
-      fileSize: size,
-      mimeType: type,
-      durationMs,
-    })
-    .returning({ id: submissions.id });
+  const created = await db.transaction(async (tx) => {
+    const [row] = await tx
+      .insert(submissions)
+      .values({
+        challengeId: active.challenge.id,
+        userId: profile.id,
+        attemptNumber: nextAttempt,
+        videoPath: path,
+        fileSize: size,
+        mimeType: type,
+        durationMs,
+      })
+      .returning({ id: submissions.id });
+
+    // Marca el intento extra como usado por este video (§27)
+    if (extraAttemptId) {
+      await tx
+        .update(extraAttempts)
+        .set({ submissionId: row.id })
+        .where(eq(extraAttempts.id, extraAttemptId));
+    }
+
+    return row;
+  });
 
   after(() =>
     notifyVideoSubmitted({

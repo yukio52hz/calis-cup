@@ -186,3 +186,25 @@ export const submissions = pgTable(
   },
   (t) => [unique().on(t.challengeId, t.userId, t.attemptNumber)],
 ).enableRLS();
+
+// §25-30: intento extra comprado con SINPE para un reto. El estado se deriva:
+// pago en revisión/rechazado; si está aprobado → disponible, usado (tiene un
+// video no rechazado) o vencido (la semana cerró sin usarlo).
+export const extraAttempts = pgTable("extra_attempts", {
+  id: uuid().primaryKey().defaultRandom(),
+  paymentId: uuid()
+    .notNull()
+    .unique()
+    .references(() => payments.id, { onDelete: "cascade" }),
+  challengeId: uuid()
+    .notNull()
+    .references(() => challenges.id, { onDelete: "cascade" }),
+  userId: uuid()
+    .notNull()
+    .references(() => profiles.id, { onDelete: "cascade" }),
+  // Video subido con este intento (si se rechaza, se puede reemplazar)
+  submissionId: uuid()
+    .unique()
+    .references(() => submissions.id, { onDelete: "set null" }),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+}).enableRLS();

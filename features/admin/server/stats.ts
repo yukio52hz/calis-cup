@@ -1,6 +1,6 @@
 import "server-only";
 
-import { count, eq, inArray } from "drizzle-orm";
+import { and, count, eq, inArray } from "drizzle-orm";
 
 import { getWeekStatus } from "@/features/tournaments/week-status";
 import { db } from "@/server/db/client";
@@ -39,7 +39,12 @@ export async function getAdminStats() {
     db
       .select({ n: count() })
       .from(payments)
-      .where(eq(payments.status, "pending_review")),
+      .where(
+        and(
+          eq(payments.status, "pending_review"),
+          eq(payments.kind, "extra_video"),
+        ),
+      ),
     tournament
       ? db
           .select({ status: registrations.status, n: count() })
@@ -66,7 +71,7 @@ export async function getAdminStats() {
     registrationsPending: byStatus.pending_review ?? 0,
     registrationsApproved: byStatus.approved ?? 0,
     pendingVideos: pendingVideos.n,
-    pendingPayments: pendingPayments.n,
+    pendingExtraPayments: pendingPayments.n,
     activeWeek: activeWeek?.weekNumber ?? null,
     totalWeeks: weeks.length,
   };

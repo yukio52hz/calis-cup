@@ -17,10 +17,13 @@ import { MAX_RECEIPT_BYTES } from "@/lib/constants";
 import { formatMb, uploadWithProgress } from "@/lib/upload";
 
 import { todayInCostaRica } from "../schemas";
-import {
-  requestReceiptUploadAction,
-  submitRegistrationAction,
-} from "../actions";
+
+type ReceiptUploadAction = (input: {
+  size: number;
+  type: string;
+}) => Promise<
+  { ok: true; signedUrl: string; path: string } | { ok: false; message: string }
+>;
 
 type Receipt =
   | { step: "empty" }
@@ -28,10 +31,19 @@ type Receipt =
   | { step: "done"; name: string; path: string; previewUrl: string | null }
   | { step: "error"; message: string };
 
-// Formulario "Ya realicé el pago" (§9): monto, referencia, fecha y comprobante
-export function EnrollForm({ fee }: { fee: number }) {
+// Formulario "Ya realicé el pago" (§9, §26): monto, referencia, fecha y
+// comprobante. Lo usan la inscripción y el video extra.
+export function PaymentForm({
+  fee,
+  submitAction,
+  requestReceiptUpload,
+}: {
+  fee: number;
+  submitAction: (state: FormState, formData: FormData) => Promise<FormState>;
+  requestReceiptUpload: ReceiptUploadAction;
+}) {
   const [state, action, isPending] = useActionState<FormState, FormData>(
-    submitRegistrationAction,
+    submitAction,
     {},
   );
   const [receipt, setReceipt] = useState<Receipt>({ step: "empty" });
@@ -54,7 +66,7 @@ export function EnrollForm({ fee }: { fee: number }) {
 
     setReceipt({ step: "uploading", name: file.name, progress: 0 });
 
-    const request = await requestReceiptUploadAction({
+    const request = await requestReceiptUpload({
       size: file.size,
       type: file.type,
     });

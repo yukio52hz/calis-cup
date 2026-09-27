@@ -13,26 +13,22 @@ import {
   notifyRegistrationSubmitted,
 } from "@/features/notifications/server/notify";
 import { getActiveTournament } from "@/features/submissions/server/queries";
-import { MAX_RECEIPT_BYTES, ROUTES } from "@/lib/constants";
+import { ROUTES } from "@/lib/constants";
 import { requireProfile, requireRole } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
 import { payments, registrations } from "@/server/db/schema";
 import { createUploadUrl, fileExists } from "@/server/storage/files";
+import {
+  paymentSchema,
+  receiptExtension,
+  receiptFileSchema,
+} from "@/features/payments/schemas";
 
 import {
   getMyRegistration,
   getNextPendingRegistrationId,
   getRegistrationForReview,
 } from "./server/queries";
-import { paymentSchema } from "./schemas";
-
-const EXTENSIONS: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-  "image/heic": "heic",
-  "application/pdf": "pdf",
-};
 
 function receiptFolder(tournamentId: string, userId: string) {
   return `registrations/${tournamentId}/${userId}/`;
@@ -65,21 +61,7 @@ export async function requestReceiptUploadAction(input: {
   { ok: true; signedUrl: string; path: string } | { ok: false; message: string }
 > {
   const profile = await requireProfile();
-  const parsed = z
-    .object({
-      size: z
-        .number()
-        .int()
-        .positive()
-        .max(MAX_RECEIPT_BYTES, "El comprobante pesa más de 5 MB."),
-      type: z
-        .string()
-        .refine(
-          (t) => t.startsWith("image/") || t === "application/pdf",
-          "Sube una imagen o un PDF.",
-        ),
-    })
-    .safeParse(input);
+  const parsed = receiptFileSchema.safeParse(input);
 
   if (!parsed.success)
     return { ok: false, message: parsed.error.issues[0].message };
@@ -88,7 +70,7 @@ export async function requestReceiptUploadAction(input: {
 
   if ("error" in context) return { ok: false, message: context.error! };
 
-  const path = `${receiptFolder(context.tournament.id, profile.id)}${crypto.randomUUID()}.${EXTENSIONS[parsed.data.type] ?? "jpg"}`;
+  const path = `${receiptFolder(context.tournament.id, profile.id)}${crypto.randomUUID()}.${receiptExtension(parsed.data.type)}`;
 
   return { ok: true, path, signedUrl: await createUploadUrl("receipts", path) };
 }

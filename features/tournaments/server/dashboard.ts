@@ -4,6 +4,8 @@ import type { CompetitorDashboard } from "../dashboard-types";
 
 import { and, asc, eq } from "drizzle-orm";
 
+import { getExtraPurchaseEligibility } from "@/features/extra-videos/server/eligibility";
+import { listMyExtras } from "@/features/extra-videos/server/queries";
 import { getRankings } from "@/features/rankings/server/queries";
 import {
   getActiveChallenge,
@@ -41,12 +43,27 @@ export async function getCompetitorDashboard(
 
   const category = registration?.category ?? profile.category;
   const isApproved = registration?.status === "approved";
-  const [attempts, rankings] = await Promise.all([
+  const [attempts, rankings, extras, purchase] = await Promise.all([
     active && isApproved
       ? listChallengeSubmissions(active.challenge.id, profile.id)
       : Promise.resolve([]),
     getRankings(category, profile.id, now),
+    active && isApproved
+      ? listMyExtras(active.challenge.id, profile.id)
+      : Promise.resolve([]),
+    isApproved
+      ? getExtraPurchaseEligibility(profile.id)
+      : Promise.resolve(null),
   ]);
+
+  // §25-27: estado del video extra para el bloque "¿Quieres mejorar tu tiempo?"
+  const extraVideo = extras.some((e) => e.status === "available")
+    ? "approved"
+    : extras.some((e) => e.status === "pending_review")
+      ? "pending_review"
+      : purchase?.ok
+        ? "available"
+        : "unavailable";
 
   const examplePath = active?.challenge.exampleVideoPath;
   const exampleVideoUrl = examplePath
@@ -98,8 +115,7 @@ export async function getCompetitorDashboard(
       finalTimeMs: s.finalTimeMs ?? undefined,
       submittedAt: s.createdAt,
     })),
-    // Video extra: se habilita en la Fase 6
-    extraVideo: isApproved && active ? "available" : "unavailable",
+    extraVideo,
     standing: me
       ? {
           position: me.position,

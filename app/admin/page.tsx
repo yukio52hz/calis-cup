@@ -23,10 +23,10 @@ export default async function AdminDashboardPage() {
       highlight: stats.pendingVideos > 0,
     },
     {
-      label: "Pagos pendientes",
-      value: stats.pendingPayments,
-      href: ROUTES.adminRegistrations,
-      highlight: stats.pendingPayments > 0,
+      label: "Videos extra por aprobar",
+      value: stats.pendingExtraPayments,
+      href: ROUTES.adminExtras,
+      highlight: stats.pendingExtraPayments > 0,
     },
     {
       label: "Semana activa",

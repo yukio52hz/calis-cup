@@ -33,3 +33,30 @@ export const REJECTION_REASONS = [
   "Monto incorrecto.",
   "Número de referencia inválido.",
 ];
+
+const RECEIPT_EXTENSIONS: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/heic": "heic",
+  "application/pdf": "pdf",
+};
+
+export function receiptExtension(type: string) {
+  return RECEIPT_EXTENSIONS[type] ?? "jpg";
+}
+
+// Comprobante: imagen o PDF de hasta 5 MB (§9)
+export const receiptFileSchema = z.object({
+  size: z
+    .number()
+    .int()
+    .positive()
+    .max(5 * 1024 * 1024, "El comprobante pesa más de 5 MB."),
+  type: z
+    .string()
+    .refine(
+      (t) => t.startsWith("image/") || t === "application/pdf",
+      "Sube una imagen o un PDF.",
+    ),
+});

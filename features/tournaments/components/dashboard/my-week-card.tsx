@@ -4,9 +4,12 @@ import type {
   SubmissionStatus,
 } from "../../dashboard-types";
 
+import NextLink from "next/link";
+
 import { Card, CardTitle } from "@/components/ui/card";
 import { LockIcon } from "@/components/ui/icons";
 import { StatusBadge, type BadgeTone } from "@/components/ui/status-badge";
+import { ROUTES } from "@/lib/constants";
 import { formatColones, formatDuration } from "@/lib/format";
 
 const SUBMISSION_BADGE: Record<SubmissionStatus, [BadgeTone, string]> = {
@@ -117,14 +120,12 @@ function ExtraVideo({
               Video extra · {formatColones(fee)}
             </p>
           </div>
-          <button
-            disabled
-            className="button button--tertiary button--sm shrink-0 rounded-full font-semibold"
-            title="Disponible en la Fase 6"
-            type="button"
+          <NextLink
+            className="button button--primary button--sm shrink-0 rounded-full font-semibold"
+            href={ROUTES.extraVideo}
           >
             Comprar
-          </button>
+          </NextLink>
         </div>
       )}
       {status === "pending_review" && (
@@ -140,6 +141,12 @@ function ExtraVideo({
         <div className="flex flex-col gap-2">
           <StatusBadge tone="success">Pago aprobado</StatusBadge>
           <p className="text-sm">Ya puedes realizar un nuevo intento.</p>
+          <NextLink
+            className="button button--primary button--md rounded-xl font-bold"
+            href={ROUTES.videos}
+          >
+            Subir video extra
+          </NextLink>
         </div>
       )}
     </div>

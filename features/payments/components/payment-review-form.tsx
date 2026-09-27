@@ -12,16 +12,19 @@ import {
   TextField,
 } from "@heroui/react";
 
-import { reviewRegistrationAction } from "../actions";
 import { REJECTION_REASONS } from "../schemas";
 
-export function RegistrationReviewForm({
-  registrationId,
+// Aprobar o rechazar un pago SINPE con motivo (§10, §26)
+export function PaymentReviewForm({
+  reviewAction,
+  nextLabel,
 }: {
-  registrationId: string;
+  // Server Action ya enlazada al id del registro a revisar
+  reviewAction: (state: FormState, formData: FormData) => Promise<FormState>;
+  nextLabel: string;
 }) {
   const [state, action, isPending] = useActionState<FormState, FormData>(
-    reviewRegistrationAction.bind(null, registrationId),
+    reviewAction,
     {},
   );
   const [decision, setDecision] = useState<"approve" | "reject">("approve");
@@ -61,7 +64,7 @@ export function RegistrationReviewForm({
           type="checkbox"
           value="1"
         />
-        Al guardar, abrir la siguiente inscripción pendiente
+        {nextLabel}
       </label>
 
       {state.message && (

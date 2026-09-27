@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 
 import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { RegistrationReviewForm } from "@/features/registrations/components/registration-review-form";
+import { ReceiptPreview } from "@/features/payments/components/receipt-preview";
+import { PaymentReviewForm } from "@/features/payments/components/payment-review-form";
+import { reviewRegistrationAction } from "@/features/registrations/actions";
 import { REGISTRATION_STATUS } from "@/features/registrations/components/registration-status";
 import { getRegistrationForReview } from "@/features/registrations/server/queries";
 import { CATEGORY_LABELS } from "@/features/users/schemas";
@@ -29,7 +31,6 @@ export default async function RegistrationReviewPage({
         payment.receiptPath,
       )
     : undefined;
-  const isPdf = payment?.receiptPath.endsWith(".pdf");
   const status = REGISTRATION_STATUS[registration.status];
   const wrongAmount = payment && payment.amount !== row.expectedFee;
 
@@ -43,33 +44,11 @@ export default async function RegistrationReviewPage({
       </NextLink>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:items-start">
-        {/* Comprobante SINPE (§9) */}
-        <Card className="flex flex-col gap-3">
-          <p className="text-xs font-bold tracking-[0.2em] text-muted">
-            COMPROBANTE
-          </p>
-          {!receiptUrl ? (
-            <p className="text-muted">No se encontró el comprobante.</p>
-          ) : isPdf ? (
-            <a
-              className="button button--tertiary button--md rounded-xl font-semibold"
-              href={receiptUrl}
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              Abrir PDF del comprobante
-            </a>
-          ) : (
-            <a href={receiptUrl} rel="noopener noreferrer" target="_blank">
-              {/* eslint-disable-next-line @next/next/no-img-element -- URL firmada temporal de Storage */}
-              <img
-                alt="Comprobante SINPE"
-                className="max-h-[70vh] w-full rounded-xl bg-black object-contain"
-                src={receiptUrl}
-              />
-            </a>
-          )}
-        </Card>
+        {payment ? (
+          <ReceiptPreview path={payment.receiptPath} url={receiptUrl} />
+        ) : (
+          <div />
+        )}
 
         <div className="flex flex-col gap-4">
           <Card>
@@ -122,7 +101,13 @@ export default async function RegistrationReviewPage({
 
           <Card>
             <h1 className="mb-4 font-display text-xl uppercase">Revisión</h1>
-            <RegistrationReviewForm registrationId={registration.id} />
+            <PaymentReviewForm
+              nextLabel="Al guardar, abrir la siguiente inscripción pendiente"
+              reviewAction={reviewRegistrationAction.bind(
+                null,
+                registration.id,
+              )}
+            />
           </Card>
         </div>
       </div>

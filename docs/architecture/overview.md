@@ -151,6 +151,19 @@ aparezca una segunda feature, añade una zona por feature con `except` para su
 - Admin: `/admin/inscripciones` (bandeja) y `/admin/inscripciones/[id]` (comprobante,
   aviso si el monto no coincide, aprobar/rechazar con motivos rápidos del §10).
 
+## Video extra (§25-30)
+
+- `extra_attempts` une un pago (`payments.kind = extra_video`), el reto y, al usarse,
+  el video. Estado derivado (`features/extra-videos/server/queries.ts`):
+  en revisión / rechazado según el pago; si está aprobado → disponible, usado
+  (video no rechazado) o vencido (semana cerrada).
+- Compra (`server/eligibility.ts`): inscripción aprobada, semana activa, al menos un
+  intento aprobado, ningún video en revisión y ningún extra en trámite o disponible.
+- Subida: el intento incluido se usa primero; luego solo con un extra disponible
+  (§27). Un video rechazado no consume el intento.
+- Formulario de pago, comprobante y revisión del admin son compartidos con la
+  inscripción (`features/payments`). Admin: `/admin/videos-extra`.
+
 ## Emails (Resend)
 
 - `server/email/`: plantilla HTML con estilos inline (`layout.ts`) y `sendEmail()`

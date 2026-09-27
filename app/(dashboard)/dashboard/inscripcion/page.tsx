@@ -2,8 +2,12 @@ import NextLink from "next/link";
 
 import { Card, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { CopyButton } from "@/features/registrations/components/copy-button";
-import { EnrollForm } from "@/features/registrations/components/enroll-form";
+import { CopyButton } from "@/features/payments/components/copy-button";
+import { PaymentForm } from "@/features/payments/components/payment-form";
+import {
+  requestReceiptUploadAction,
+  submitRegistrationAction,
+} from "@/features/registrations/actions";
 import { getMyRegistration } from "@/features/registrations/server/queries";
 import { getActiveTournament } from "@/features/submissions/server/queries";
 import { CATEGORY_LABELS } from "@/features/users/schemas";
@@ -160,7 +164,11 @@ export default async function EnrollPage() {
 
           <Card>
             <CardTitle eyebrow="PASO 2">Registra tu pago</CardTitle>
-            <EnrollForm fee={tournament.registrationFee} />
+            <PaymentForm
+              fee={tournament.registrationFee}
+              requestReceiptUpload={requestReceiptUploadAction}
+              submitAction={submitRegistrationAction}
+            />
           </Card>
         </>
       )}

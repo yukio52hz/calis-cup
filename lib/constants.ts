@@ -9,12 +9,14 @@ export const ROUTES = {
   dashboard: "/dashboard",
   profile: "/dashboard/profile",
   enroll: "/dashboard/inscripcion",
+  extraVideo: "/dashboard/video-extra",
   ranking: "/dashboard/ranking",
   videos: "/dashboard/videos",
   admin: "/admin",
   adminVideos: "/admin/videos",
   adminRegistrations: "/admin/inscripciones",
   adminTournament: "/admin/torneo",
+  adminExtras: "/admin/videos-extra",
 } as const;
 
 // Límite por archivo del plan Free de Supabase (también en el bucket "videos")
