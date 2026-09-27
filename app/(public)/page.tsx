@@ -1,3 +1,5 @@
+import { getPublicTournamentInfo } from "@/features/tournaments/server/public-info";
+
 import { Hero } from "./_components/hero";
 import {
   Faq,
@@ -8,14 +10,16 @@ import {
   Tournament,
 } from "./_components/sections";
 
-export default function Home() {
+export default async function Home() {
+  const info = await getPublicTournamentInfo();
+
   return (
     <>
-      <Hero />
+      <Hero info={info} />
       <HowItWorks />
-      <Tournament />
-      <Registration />
-      <Faq />
+      <Tournament info={info} />
+      <Registration info={info} />
+      <Faq info={info} />
       <FinalCta />
       <Footer />
     </>

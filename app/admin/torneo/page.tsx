@@ -4,6 +4,7 @@ import clsx from "clsx";
 import { Card, CardTitle } from "@/components/ui/card";
 import { ChevronRightIcon } from "@/components/ui/icons";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { PointsEditor } from "@/features/tournaments/components/admin/points-editor";
 import { TournamentForm } from "@/features/tournaments/components/admin/tournament-form";
 import { TOURNAMENT_STATUS_LABELS } from "@/features/tournaments/schemas";
 import {
@@ -58,12 +59,24 @@ export default async function AdminTournamentPage() {
       </header>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:items-start">
-        <Card>
-          <CardTitle eyebrow="INFORMACIÓN Y CONFIGURACIÓN">
-            Datos del torneo
-          </CardTitle>
-          <TournamentForm tournament={tournament} />
-        </Card>
+        <div className="flex flex-col gap-4">
+          <Card>
+            <CardTitle eyebrow="INFORMACIÓN Y CONFIGURACIÓN">
+              Datos del torneo
+            </CardTitle>
+            <TournamentForm tournament={tournament} />
+          </Card>
+          <Card>
+            <CardTitle eyebrow="SISTEMA DE PUNTOS">
+              Puntos por posición
+            </CardTitle>
+            <PointsEditor
+              pointsBeyond={tournament.pointsBeyond}
+              pointsByPosition={tournament.pointsByPosition}
+              tournamentId={tournament.id}
+            />
+          </Card>
+        </div>
 
         <section className="flex flex-col gap-3">
           <h2 className="text-xs font-bold tracking-[0.2em] text-muted">

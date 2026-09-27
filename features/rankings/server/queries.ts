@@ -21,11 +21,7 @@ import {
   tournamentWeeks,
 } from "@/server/db/schema";
 
-// Puntos por posición (§22): 100, 95, 90… (mínimo 5).
-// TODO(Fase 5): leerlos de una points_table configurable por el admin.
-export function pointsFor(position: number) {
-  return Math.max(100 - (position - 1) * 5, 5);
-}
+import { pointsFor } from "../points";
 
 // Ranking de competición: empates comparten posición (1, 2, 2, 4)
 function rank<T>(rows: T[], score: (row: T) => number, asc: boolean) {
@@ -135,7 +131,7 @@ export async function getRankings(
       rawTimeMs: row.rawTimeMs ?? row.finalTimeMs!,
       penaltyMs: row.penaltyMs ?? 0,
       finalTimeMs: row.finalTimeMs!,
-      points: pointsFor(position),
+      points: pointsFor(position, tournament),
     }));
   }
 

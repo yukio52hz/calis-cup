@@ -1,0 +1,2 @@
+ALTER TABLE "tournaments" ADD COLUMN "points_by_position" integer[] DEFAULT '{100,95,90,85,80,75,70,65,60,55,50,45,40,35,30,25,20,15,10,5}'::integer[] NOT NULL;--> statement-breakpoint
+ALTER TABLE "tournaments" ADD COLUMN "points_beyond" integer DEFAULT 5 NOT NULL;

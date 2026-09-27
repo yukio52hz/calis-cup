@@ -125,7 +125,8 @@ aparezca una segunda feature, añade una zona por feature con `except` para su
 - Rechazar exige una observación y no consume el intento del competidor.
 - La clasificación (`features/rankings/server/queries.ts`) se calcula en memoria con
   los videos aprobados de inscripciones aprobadas: mejor tiempo por semana →
-  ranking con empates → puntos (100, 95, 90…) → acumulada.
+  ranking con empates → puntos según `tournaments.points_by_position` / `points_beyond`
+  (§22, editables en Admin → Torneo) → acumulada.
 
 ## Gestión del torneo (admin)
 

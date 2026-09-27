@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   date,
   integer,
@@ -35,6 +36,15 @@ export const tournaments = pgTable("tournaments", {
   extraVideoFee: integer().notNull(),
   sinpeNumber: text(),
   status: tournamentStatusEnum().notNull().default("draft"),
+  // §22: puntos por posición (índice 0 = 1.er lugar) y para las posiciones
+  // que quedan fuera de la lista. Por defecto: 100, 95, 90… 5.
+  pointsByPosition: integer()
+    .array()
+    .notNull()
+    .default(
+      sql`'{100,95,90,85,80,75,70,65,60,55,50,45,40,35,30,25,20,15,10,5}'::integer[]`,
+    ),
+  pointsBeyond: integer().notNull().default(5),
   ...timestamps,
 }).enableRLS();
 

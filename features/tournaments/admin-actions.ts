@@ -25,6 +25,7 @@ import { getWeekById, listApprovedCompetitorIds } from "./server/admin-queries";
 import {
   challengeSchema,
   createTournamentSchema,
+  pointsSchema,
   tournamentSchema,
   weekDatesSchema,
 } from "./schemas";
@@ -277,4 +278,37 @@ export async function setExampleVideoAction(
   refresh();
 
   return { ok: true as const };
+}
+
+// §22: puntos configurables desde el panel (el ranking se recalcula al leerlo)
+export async function updatePointsAction(
+  tournamentId: string,
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  await requireRole("admin");
+
+  let payload: unknown;
+
+  try {
+    payload = JSON.parse(String(formData.get("points")));
+  } catch {
+    return { message: "Datos inválidos." };
+  }
+
+  const parsed = pointsSchema.safeParse(payload);
+
+  if (!parsed.success) return { message: parsed.error.issues[0].message };
+
+  await db
+    .update(tournaments)
+    .set(parsed.data)
+    .where(eq(tournaments.id, tournamentId));
+  refresh();
+  revalidatePath("/");
+
+  return {
+    success: true,
+    message: "Puntos guardados. La clasificación ya los usa.",
+  };
 }

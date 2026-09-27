@@ -1,17 +1,18 @@
+import type { PublicTournamentInfo } from "@/features/tournaments/server/public-info";
+
 import NextLink from "next/link";
 
 import { BrandBackground } from "@/components/layout/brand-background";
-import { tournamentInfo } from "@/config/site";
 import { ROUTES } from "@/lib/constants";
 
-const stats = [
-  { value: tournamentInfo.weeks, label: "Semanas" },
-  { value: tournamentInfo.challenges, label: "Retos" },
-  { value: tournamentInfo.categories, label: "Categorías" },
-  { value: tournamentInfo.rankings, label: "Clasificación" },
-];
+export function Hero({ info }: { info: PublicTournamentInfo }) {
+  const stats = [
+    { value: info.weeks, label: "Semanas" },
+    { value: info.weeks, label: "Retos" },
+    { value: 2, label: "Categorías" },
+    { value: 1, label: "Clasificación" },
+  ];
 
-export function Hero() {
   return (
     <section className="relative isolate overflow-hidden">
       <BrandBackground />
@@ -31,8 +32,9 @@ export function Hero() {
         </h1>
 
         <p className="max-w-xl text-base text-muted sm:text-lg">
-          El primer torneo online de calistenia de Costa Rica. 4 semanas · 4
-          retos · 1 clasificación. Categorías femenina y masculina.
+          El primer torneo online de calistenia de Costa Rica. {info.weeks}{" "}
+          semanas · {info.weeks} retos · 1 clasificación. Categorías femenina y
+          masculina.
         </p>
 
         <div className="flex flex-col gap-3 sm:flex-row">

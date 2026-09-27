@@ -1,6 +1,7 @@
+import type { PublicTournamentInfo } from "@/features/tournaments/server/public-info";
+
 import NextLink from "next/link";
 
-import { tournamentInfo } from "@/config/site";
 import { ROUTES } from "@/lib/constants";
 
 import { Card, Section, SectionHeader, formatColones } from "./ui";
@@ -54,17 +55,17 @@ export function HowItWorks() {
   );
 }
 
-export function Tournament() {
-  const weeks = Array.from({ length: tournamentInfo.weeks }, (_, i) => i + 1);
+export function Tournament({ info }: { info: PublicTournamentInfo }) {
+  const weeks = Array.from({ length: info.weeks }, (_, i) => i + 1);
 
   return (
     <Section className="bg-surface/30" id="torneo">
       <SectionHeader
-        description="Los puntos de cada semana se acumulan. Al final de la semana 4 se define la clasificación final en cada categoría."
+        description={`Los puntos de cada semana se acumulan. Al final de la semana ${info.weeks} se define la clasificación final en cada categoría.`}
         eyebrow="EL TORNEO"
         title={
           <>
-            4 semanas · 4 retos ·{" "}
+            {info.weeks} semanas · {info.weeks} retos ·{" "}
             <span className="text-accent">1 clasificación</span>
           </>
         }
@@ -112,7 +113,7 @@ export function Tournament() {
             Puntos por posición
           </h3>
           <ul className="mt-4 flex flex-col gap-2">
-            {tournamentInfo.points.map((points, index) => (
+            {info.points.map((points, index) => (
               <li
                 key={points}
                 className="flex items-center justify-between rounded-lg bg-background/60 px-4 py-2"
@@ -131,14 +132,6 @@ export function Tournament() {
   );
 }
 
-const includes = [
-  "4 semanas de competencia",
-  "4 retos",
-  "1 video por semana",
-  "Acumulación de puntos",
-  "El 100% de las inscripciones va para premios",
-];
-
 const sinpeSteps = [
   "Crea tu cuenta y completa tu perfil.",
   "Haz el SINPE Móvil por el monto de la inscripción.",
@@ -146,7 +139,15 @@ const sinpeSteps = [
   "Recibe un email cuando tu inscripción sea aprobada.",
 ];
 
-export function Registration() {
+export function Registration({ info }: { info: PublicTournamentInfo }) {
+  const includes = [
+    `${info.weeks} semanas de competencia`,
+    `${info.weeks} retos`,
+    "1 video por semana",
+    "Acumulación de puntos",
+    "El 100% de las inscripciones va para premios",
+  ];
+
   return (
     <Section id="inscripcion">
       <SectionHeader
@@ -161,7 +162,7 @@ export function Registration() {
             INSCRIPCIÓN
           </p>
           <p className="mt-2 font-display text-5xl">
-            {formatColones(tournamentInfo.registrationFee)}
+            {formatColones(info.registrationFee)}
           </p>
           <ul className="mt-6 flex flex-col gap-2">
             {includes.map((item) => (
@@ -206,7 +207,7 @@ export function Registration() {
                 </p>
               </div>
               <p className="shrink-0 font-display text-2xl text-accent">
-                {formatColones(tournamentInfo.extraVideoFee)}
+                {formatColones(info.extraVideoFee)}
               </p>
             </div>
           </Card>
@@ -216,35 +217,37 @@ export function Registration() {
   );
 }
 
-const faqs = [
-  {
-    q: "¿Quién puede participar?",
-    a: "Cualquier persona que cree su cuenta, elija su categoría (femenino o masculino) y tenga su inscripción aprobada.",
-  },
-  {
-    q: "¿Qué pasa si no subo mi video antes del domingo?",
-    a: "La semana se cierra el domingo a las 11:59 p. m. Después ya no se aceptan videos para ese reto.",
-  },
-  {
-    q: "¿Puedo subir más de un video por semana?",
-    a: `Sí, comprando un video extra de ${formatColones(tournamentInfo.extraVideoFee)}. Podrás subirlo cuando se apruebe el pago, y se toma tu mejor resultado válido.`,
-  },
-  {
-    q: "¿Cómo se calcula mi resultado?",
-    a: "Tiempo realizado más las penalizaciones por repeticiones incorrectas. El menor tiempo final gana la semana.",
-  },
-  {
-    q: "¿A dónde va el dinero de la inscripción?",
-    a: "El 100% de las inscripciones va para premios.",
-  },
-];
+function faqs(info: PublicTournamentInfo) {
+  return [
+    {
+      q: "¿Quién puede participar?",
+      a: "Cualquier persona que cree su cuenta, elija su categoría (femenino o masculino) y tenga su inscripción aprobada.",
+    },
+    {
+      q: "¿Qué pasa si no subo mi video antes del domingo?",
+      a: "La semana se cierra el domingo a las 11:59 p. m. Después ya no se aceptan videos para ese reto.",
+    },
+    {
+      q: "¿Puedo subir más de un video por semana?",
+      a: `Sí, comprando un video extra de ${formatColones(info.extraVideoFee)}. Podrás subirlo cuando se apruebe el pago, y se toma tu mejor resultado válido.`,
+    },
+    {
+      q: "¿Cómo se calcula mi resultado?",
+      a: "Tiempo realizado más las penalizaciones por repeticiones incorrectas. El menor tiempo final gana la semana.",
+    },
+    {
+      q: "¿A dónde va el dinero de la inscripción?",
+      a: "El 100% de las inscripciones va para premios.",
+    },
+  ];
+}
 
-export function Faq() {
+export function Faq({ info }: { info: PublicTournamentInfo }) {
   return (
     <Section className="bg-surface/30" id="preguntas">
       <SectionHeader eyebrow="PREGUNTAS" title="Preguntas frecuentes" />
       <div className="flex max-w-3xl flex-col gap-3">
-        {faqs.map((faq) => (
+        {faqs(info).map((faq) => (
           <details
             key={faq.q}
             className="group rounded-2xl border border-white/10 bg-surface/70 px-5 py-4"

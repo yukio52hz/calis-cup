@@ -77,3 +77,40 @@ export const TOURNAMENT_STATUS_LABELS = {
   active: "Activo",
   finished: "Finalizado",
 } as const;
+
+const points = z.coerce
+  .number("Ingresa los puntos")
+  .int("Sin decimales")
+  .min(0)
+  .max(10_000);
+
+// §22: tabla de puntos. Un mejor puesto nunca recibe menos puntos.
+export const pointsSchema = z
+  .object({
+    pointsByPosition: z
+      .array(points)
+      .min(1, "Agrega al menos una posición")
+      .max(100),
+    pointsBeyond: points,
+  })
+  .superRefine((value, ctx) => {
+    const list = value.pointsByPosition;
+
+    for (let i = 1; i < list.length; i++) {
+      if (list[i] > list[i - 1]) {
+        ctx.addIssue({
+          code: "custom",
+          message: `El ${i + 1}.º lugar no puede tener más puntos que el ${i}.º.`,
+        });
+
+        return;
+      }
+    }
+    if (value.pointsBeyond > list[list.length - 1]) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "Las demás posiciones no pueden tener más puntos que la última de la lista.",
+      });
+    }
+  });
