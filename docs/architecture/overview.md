@@ -127,6 +127,19 @@ aparezca una segunda feature, añade una zona por feature con `except` para su
   los videos aprobados de inscripciones aprobadas: mejor tiempo por semana →
   ranking con empates → puntos (100, 95, 90…) → acumulada.
 
+## Gestión del torneo (admin)
+
+- `/admin/torneo`: crear el torneo (genera N semanas de lunes 00:00 a domingo
+  23:59:59, hora CR) o editar nombre, costos, número SINPE y estado. Activar un
+  torneo finaliza los demás (MVP: uno activo a la vez).
+- `/admin/torneo/semana/[n]`: editor del reto (nombre, objetivo, reglas, ejercicios
+  con repeticiones y penalización), fechas, video de ejemplo (bucket `videos`,
+  carpeta `examples/`) y publicación.
+- Publicar (`published_at`) habilita el reto; los competidores lo ven cuando empieza
+  la semana. "Avisar a los competidores" envía el email "Nuevo reto" a los inscritos
+  aprobados una sola vez (`announced_at`); es manual para no depender de un cron.
+- `bun run db:seed` sigue sirviendo para datos de desarrollo.
+
 ## Inscripción y pagos (SINPE manual)
 
 - Competidor: `/dashboard/inscripcion` muestra costo y número SINPE; registra monto,

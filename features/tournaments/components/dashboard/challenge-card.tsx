@@ -41,15 +41,23 @@ export function ChallengeCard({
       </div>
 
       <div className="flex flex-col gap-5 p-5">
-        {/* Video de ejemplo (el reproductor real llega en la Fase 3) */}
-        <div className="relative flex aspect-video items-center lg:aspect-[2/1] justify-center overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-background to-surface-secondary">
-          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-lg">
-            <PlayIcon className="ml-0.5 h-6 w-6" />
-          </span>
-          <span className="absolute bottom-2 left-3 text-xs font-semibold text-muted">
-            Video de ejemplo
-          </span>
-        </div>
+        {/* Video de ejemplo (§15) */}
+        {challenge.exampleVideoUrl ? (
+          // Video de demostración, sin diálogo: no lleva subtítulos
+          // eslint-disable-next-line jsx-a11y/media-has-caption
+          <video
+            controls
+            playsInline
+            className="aspect-video w-full rounded-xl border border-white/10 bg-black"
+            preload="metadata"
+            src={challenge.exampleVideoUrl}
+          />
+        ) : (
+          <div className="flex aspect-video items-center justify-center rounded-xl border border-dashed border-white/15 text-sm text-muted">
+            <PlayIcon className="mr-2 h-4 w-4" /> El video de ejemplo estará
+            disponible pronto
+          </div>
+        )}
 
         <div>
           <h3 className="text-xs font-bold tracking-[0.2em] text-muted">

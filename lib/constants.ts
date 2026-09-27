@@ -14,6 +14,7 @@ export const ROUTES = {
   admin: "/admin",
   adminVideos: "/admin/videos",
   adminRegistrations: "/admin/inscripciones",
+  adminTournament: "/admin/torneo",
 } as const;
 
 // Límite por archivo del plan Free de Supabase (también en el bucket "videos")

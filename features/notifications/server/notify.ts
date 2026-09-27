@@ -1,11 +1,11 @@
 import "server-only";
 
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 
 import { CATEGORY_LABELS } from "@/features/users/schemas";
 import { ROUTES } from "@/lib/constants";
 import { env } from "@/lib/env";
-import { formatColones, formatDuration } from "@/lib/format";
+import { formatColones, formatDateTime, formatDuration } from "@/lib/format";
 import { db } from "@/server/db/client";
 import { profiles } from "@/server/db/schema";
 import { sendEmail } from "@/server/email/send";
@@ -223,4 +223,34 @@ export async function notifyVideoReviewed(input: {
     note: input.notes ? { label: "Motivo", text: input.notes } : undefined,
     cta: { label: "Subir de nuevo", url: url(ROUTES.videos) },
   });
+}
+
+// §14, §31: nuevo reto publicado (a los inscritos aprobados)
+export async function notifyChallengePublished(input: {
+  userIds: string[];
+  weekNumber: number;
+  challengeName: string;
+  endsAt: Date;
+}) {
+  if (input.userIds.length === 0) return;
+
+  const recipients = await db
+    .select({ email: profiles.email })
+    .from(profiles)
+    .where(inArray(profiles.id, input.userIds));
+
+  await sendEmail(
+    recipients.map((r) => r.email),
+    {
+      subject: `🔥 Nuevo reto: Semana ${input.weekNumber} · ${input.challengeName}`,
+      preheader: `Tienes hasta el ${formatDateTime(input.endsAt)} para subir tu video.`,
+      title: `Nuevo reto · Semana ${input.weekNumber}`,
+      paragraphs: [
+        `Ya está disponible el reto de la semana: ${input.challengeName}.`,
+        "Revisa las reglas y el video de ejemplo, realiza el set y sube tu video desde la app.",
+      ],
+      details: [["Fecha límite", formatDateTime(input.endsAt)]],
+      cta: { label: "Ver reto", url: url(ROUTES.dashboard) },
+    },
+  );
 }

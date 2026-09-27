@@ -10,7 +10,7 @@ const items = [
   { href: "/admin/videos", label: "Videos" },
   { href: "/admin/inscripciones", label: "Inscripciones" },
   { href: null, label: "Competidores" },
-  { href: null, label: "Torneo" },
+  { href: "/admin/torneo", label: "Torneo" },
 ];
 
 export function AdminNav() {

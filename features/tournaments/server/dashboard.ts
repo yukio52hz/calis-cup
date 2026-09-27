@@ -13,6 +13,7 @@ import {
 } from "@/features/submissions/server/queries";
 import { db } from "@/server/db/client";
 import { challenges, tournamentWeeks } from "@/server/db/schema";
+import { createReadUrls } from "@/server/storage/files";
 
 import { getWeekStatus } from "../week-status";
 
@@ -47,6 +48,10 @@ export async function getCompetitorDashboard(
     getRankings(category, profile.id, now),
   ]);
 
+  const examplePath = active?.challenge.exampleVideoPath;
+  const exampleVideoUrl = examplePath
+    ? (await createReadUrls("videos", [examplePath])).get(examplePath)
+    : undefined;
   const accumulated = rankings?.accumulated ?? [];
   const me = accumulated.find((row) => row.isMe);
 
@@ -84,6 +89,7 @@ export async function getCompetitorDashboard(
             penaltySeconds: e.penaltySeconds,
           })),
           endsAt: active.week.endsAt,
+          exampleVideoUrl,
         }
       : null,
     attempts: attempts.map((s) => ({

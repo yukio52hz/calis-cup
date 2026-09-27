@@ -38,7 +38,9 @@ export default async function RootLayout({
   return (
     <html suppressHydrationWarning lang="es">
       <head />
+      {/* suppressHydrationWarning: extensiones (ej. ColorZilla) agregan atributos al body */}
       <body
+        suppressHydrationWarning
         className={clsx(
           "min-h-screen text-foreground bg-background font-sans antialiased",
           fontSans.variable,

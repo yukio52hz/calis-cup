@@ -51,6 +51,8 @@ export const tournamentWeeks = pgTable(
     endsAt: timestamp({ withTimezone: true }).notNull(),
     // null = el reto aún no se publica (§14)
     publishedAt: timestamp({ withTimezone: true }),
+    // Cuándo se envió el email "Nuevo reto" (§31), para no repetirlo
+    announcedAt: timestamp({ withTimezone: true }),
     ...timestamps,
   },
   (t) => [unique().on(t.tournamentId, t.weekNumber)],

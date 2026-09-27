@@ -1,0 +1,1 @@
+ALTER TABLE "tournament_weeks" ADD COLUMN "announced_at" timestamp with time zone;
