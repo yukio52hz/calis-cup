@@ -12,4 +12,8 @@ export const ROUTES = {
   ranking: "/dashboard/ranking",
   videos: "/dashboard/videos",
   admin: "/admin",
+  adminVideos: "/admin/videos",
 } as const;
+
+// Límite por archivo del plan Free de Supabase (también en el bucket "videos")
+export const MAX_VIDEO_BYTES = 50 * 1024 * 1024;

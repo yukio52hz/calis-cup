@@ -1,0 +1,1 @@
+ALTER TABLE "submissions" ADD COLUMN "penalties" jsonb DEFAULT '[]'::jsonb NOT NULL;

@@ -5,7 +5,7 @@ import clsx from "clsx";
 import { siteConfig } from "@/config/site";
 import { fontDisplay, fontSans } from "@/config/fonts";
 import { Navbar } from "@/components/navbar";
-import { getAuthUser } from "@/server/auth/session";
+import { getSession } from "@/server/auth/session";
 import { signOutAction } from "@/features/users/auth-actions";
 
 import { Providers } from "./providers";
@@ -33,7 +33,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getAuthUser();
+  const session = await getSession();
 
   return (
     <html suppressHydrationWarning lang="es">
@@ -47,7 +47,11 @@ export default async function RootLayout({
       >
         <Providers themeProps={{ attribute: "class", forcedTheme: "dark" }}>
           <div className="relative flex min-h-screen flex-col">
-            <Navbar isSignedIn={Boolean(user)} signOutAction={signOutAction} />
+            <Navbar
+              isAdmin={session?.profile?.role === "admin"}
+              isSignedIn={Boolean(session)}
+              signOutAction={signOutAction}
+            />
             <main className="flex-grow">{children}</main>
           </div>
         </Providers>

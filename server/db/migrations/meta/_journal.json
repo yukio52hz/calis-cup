@@ -8,6 +8,27 @@
       "when": 1790468319658,
       "tag": "0000_dapper_santa_claus",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790473694585,
+      "tag": "0001_dry_mantis",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790473699203,
+      "tag": "0002_videos_bucket",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790474568623,
+      "tag": "0003_submission_penalties",
+      "breakpoints": true
     }
   ]
 }

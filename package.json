@@ -10,7 +10,8 @@
 		"lint": "eslint --fix",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
-		"db:studio": "drizzle-kit studio"
+		"db:studio": "drizzle-kit studio",
+		"db:seed": "bun scripts/seed.ts"
 	},
 	"dependencies": {
 		"@heroui/react": "3.2.6",

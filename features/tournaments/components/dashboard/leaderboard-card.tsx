@@ -37,6 +37,11 @@ export function LeaderboardCard({
       >
         Clasificación
       </CardTitle>
+      {leaderboard.length === 0 && (
+        <p className="rounded-xl bg-background/50 px-4 py-3 text-center text-sm text-muted">
+          Aún no hay resultados aprobados.
+        </p>
+      )}
       <ol className="flex flex-col gap-1.5">
         {leaderboard.map((row) => (
           <li

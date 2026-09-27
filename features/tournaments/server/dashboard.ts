@@ -1,112 +1,115 @@
 import "server-only";
 
-import type {
-  CompetitorDashboard,
-  RegistrationStatus,
-} from "../dashboard-types";
+import type { CompetitorDashboard } from "../dashboard-types";
 
-import { tournamentInfo } from "@/config/site";
+import { and, asc, eq } from "drizzle-orm";
 
-// TODO(Fase 2-4): reemplazar por queries reales. Mientras tanto devuelve datos
-// de ejemplo con fechas relativas a hoy para que el reto se vea "en curso".
+import { getRankings } from "@/features/rankings/server/queries";
+import {
+  getActiveChallenge,
+  getActiveTournament,
+  getRegistration,
+  listChallengeSubmissions,
+} from "@/features/submissions/server/queries";
+import { db } from "@/server/db/client";
+import { challenges, tournamentWeeks } from "@/server/db/schema";
 
-export const MOCK_STATES = [
-  "not_registered",
-  "pending_review",
-  "approved",
-  "rejected",
-] as const satisfies readonly RegistrationStatus[];
+import { getWeekStatus } from "../week-status";
 
-const DAY = 24 * 60 * 60 * 1000;
-const CR_OFFSET = 6 * 60 * 60 * 1000; // Costa Rica = UTC-6, sin horario de verano
+type Profile = { id: string; category: "female" | "male" };
 
-// Lunes 00:00 (hora CR) de la semana actual
-function currentMonday(now: Date) {
-  const cr = new Date(now.getTime() - CR_OFFSET);
-  const daysSinceMonday = (cr.getUTCDay() + 6) % 7;
-  const mondayCr = Date.UTC(
-    cr.getUTCFullYear(),
-    cr.getUTCMonth(),
-    cr.getUTCDate() - daysSinceMonday,
-  );
-
-  return new Date(mondayCr + CR_OFFSET);
-}
-
+// Datos del dashboard del competidor (§12-15, §23, §29). null = sin torneo activo.
 export async function getCompetitorDashboard(
-  _profileId: string,
-  state: RegistrationStatus = "approved",
-): Promise<CompetitorDashboard> {
-  const now = new Date();
-  const activeStart = currentMonday(now);
-  const activeWeek = 2;
-  const weekStart = (n: number) =>
-    new Date(activeStart.getTime() + (n - activeWeek) * 7 * DAY);
-  // Domingo 23:59:59
-  const weekEnd = (n: number) =>
-    new Date(weekStart(n).getTime() + 7 * DAY - 1000);
+  profile: Profile,
+): Promise<CompetitorDashboard | null> {
+  const tournament = await getActiveTournament();
 
-  const names = ["Pull up", "Muscle up", "Pistol squat", "Toes to bar"];
-  const isApproved = state === "approved";
+  if (!tournament) return null;
+
+  const now = new Date();
+  const [registration, active, weekRows] = await Promise.all([
+    getRegistration(tournament.id, profile.id),
+    getActiveChallenge(tournament.id, now),
+    db
+      .select({ week: tournamentWeeks, challengeName: challenges.name })
+      .from(tournamentWeeks)
+      .leftJoin(challenges, eq(challenges.weekId, tournamentWeeks.id))
+      .where(and(eq(tournamentWeeks.tournamentId, tournament.id)))
+      .orderBy(asc(tournamentWeeks.weekNumber)),
+  ]);
+
+  const category = registration?.category ?? profile.category;
+  const isApproved = registration?.status === "approved";
+  const [attempts, rankings] = await Promise.all([
+    active && isApproved
+      ? listChallengeSubmissions(active.challenge.id, profile.id)
+      : Promise.resolve([]),
+    getRankings(category, profile.id, now),
+  ]);
+
+  const accumulated = rankings?.accumulated ?? [];
+  const me = accumulated.find((row) => row.isMe);
 
   return {
     tournament: {
-      name: "Torneo Online · Temporada 1",
-      registrationFee: tournamentInfo.registrationFee,
-      extraVideoFee: tournamentInfo.extraVideoFee,
+      name: tournament.name,
+      registrationFee: tournament.registrationFee,
+      extraVideoFee: tournament.extraVideoFee,
     },
     registration: {
-      status: state,
-      rejectionReason:
-        state === "rejected"
-          ? "El comprobante es ilegible. Sube una captura más clara."
-          : undefined,
+      status: registration?.status ?? "not_registered",
+      rejectionReason: registration?.rejectionReason ?? undefined,
     },
-    weeks: [1, 2, 3, 4].map((n) => ({
-      number: n,
-      status:
-        n < activeWeek ? "closed" : n === activeWeek ? "active" : "upcoming",
-      challengeName: n <= activeWeek ? names[n - 1] : undefined,
-      startsAt: weekStart(n),
-      endsAt: weekEnd(n),
-    })),
-    activeChallenge: {
-      week: activeWeek,
-      name: "Muscle up",
-      objective: "Completa el set en el menor tiempo posible.",
-      exercises: [
-        { name: "Muscle up", reps: 10, penaltySeconds: 5 },
-        { name: "Dip", reps: 20, penaltySeconds: 3 },
-        { name: "Push up", reps: 30, penaltySeconds: 3 },
-      ],
-      rules: [
-        "Video continuo, sin cortes ni edición.",
-        "Todo el cuerpo debe verse en la toma.",
-        "Brazos totalmente extendidos al inicio de cada repetición.",
-      ],
-      endsAt: weekEnd(activeWeek),
-    },
-    attempts: isApproved
-      ? [
-          {
-            number: 1,
-            status: "approved",
-            finalTimeMs: 155_000,
-            submittedAt: new Date(weekStart(activeWeek).getTime() + 1.5 * DAY),
-          },
-        ]
-      : [],
-    extraVideo: isApproved ? "available" : "unavailable",
-    standing: isApproved
-      ? { position: 4, totalPoints: 170, competitors: 18 }
+    weeks: weekRows.map(({ week, challengeName }) => {
+      const status = getWeekStatus(week, now);
+
+      return {
+        number: week.weekNumber,
+        status,
+        challengeName:
+          status === "upcoming" ? undefined : (challengeName ?? undefined),
+        startsAt: week.startsAt,
+        endsAt: week.endsAt,
+      };
+    }),
+    activeChallenge: active
+      ? {
+          week: active.week.weekNumber,
+          name: active.challenge.name,
+          objective: active.challenge.objective ?? "",
+          rules: active.challenge.rules,
+          exercises: active.exercises.map((e) => ({
+            name: e.name,
+            reps: e.repetitions,
+            penaltySeconds: e.penaltySeconds,
+          })),
+          endsAt: active.week.endsAt,
+        }
       : null,
+    attempts: attempts.map((s) => ({
+      number: s.attemptNumber,
+      status: s.status,
+      finalTimeMs: s.finalTimeMs ?? undefined,
+      submittedAt: s.createdAt,
+    })),
+    // Video extra: se habilita en la Fase 6
+    extraVideo: isApproved && active ? "available" : "unavailable",
+    standing: me
+      ? {
+          position: me.position,
+          totalPoints: me.total,
+          competitors: accumulated.length,
+        }
+      : null,
+    // Top 3 de la categoría + mi fila si no estoy en el podio
     leaderboard: [
-      { position: 1, name: "Juan P.", points: 195 },
-      { position: 2, name: "Pedro M.", points: 190 },
-      { position: 3, name: "Carlos R.", points: 185 },
-      ...(isApproved
-        ? [{ position: 4, name: "Tú", points: 170, isMe: true }]
-        : []),
-    ],
+      ...accumulated.slice(0, 3),
+      ...(me && me.position > 3 ? [me] : []),
+    ].map((row) => ({
+      position: row.position,
+      name: row.isMe ? "Tú" : row.name,
+      points: row.total,
+      isMe: row.isMe,
+    })),
   };
 }

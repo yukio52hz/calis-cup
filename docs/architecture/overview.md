@@ -10,17 +10,27 @@ para un MVP de ~40 competidores. Requerimientos de producto en
 | --- | --- |
 | DB | PostgreSQL en **Supabase** + Drizzle (`server/db/`, driver `postgres-js`) |
 | Auth | **Supabase Auth** (email + contraseña) vía `@supabase/ssr` |
-| Archivos (videos, comprobantes) | Por decidir en Fase 2: Supabase Storage (1 GB gratis) o Cloudflare R2 |
+| Archivos (videos, comprobantes) | **Supabase Storage**, bucket privado `videos` (50 MB por archivo, solo `video/*`) |
 | Email transaccional | Resend (Fase 2+) |
 | Deploy | Vercel |
 
-Los videos **nunca** pasan por una función de Vercel (límite de 4.5 MB): el
-cliente sube directo al storage con una URL firmada que emite una Server Action.
+Los videos **nunca** pasan por una función de Vercel (límite de 4.5 MB):
+
+1. `requestVideoUploadAction` valida las reglas (§52, `features/submissions/server/eligibility.ts`)
+   y firma una URL de subida con la secret key (`server/storage/videos.ts`).
+2. El teléfono hace `PUT` directo a Storage (XHR, con barra de progreso).
+3. `confirmVideoUploadAction` verifica que el archivo exista en la carpeta del
+   usuario (`{torneo}/week-{n}/{usuario}/`) y crea la fila en `submissions`.
+
+El bucket no tiene políticas de storage: solo el servidor firma URLs de subida
+y de reproducción (1 h). Plan Free: 1 GB de almacenamiento y 5 GB de egress
+al mes; para el torneo real con ~40 personas conviene el plan Pro.
 
 ## Base de datos
 
 - Schema en `server/db/schema/`, migraciones en `server/db/migrations/`.
 - `bun run db:generate` → genera SQL; `bun run db:migrate` → aplica; `bun run db:studio`.
+- `bun run db:seed [emails…]` → torneo de ejemplo (semana 2 = semana actual) y aprueba la inscripción de esos perfiles.
 - Drizzle solo gestiona el schema `public`; `auth.*` es de Supabase. `profiles.id` = `auth.users.id`.
 - La app se conecta por el **transaction pooler** (`DATABASE_URL`, puerto 6543) con `prepare: false`; `drizzle-kit` usa el **session pooler** (`DIRECT_URL`, puerto 5432).
 - **RLS activado sin políticas en todas las tablas** (`.enableRLS()`): la API
@@ -106,6 +116,17 @@ aparezca una segunda feature, añade una zona por feature con `except` para su
    permite muy pocos emails por hora.
 4. El plan gratuito pausa el proyecto tras 7 días sin actividad.
 
+## Revisión de videos y clasificación
+
+- `/admin/videos`: bandeja (pendientes, aprobados, rechazados). `/admin/videos/[id]`:
+  el admin registra el tiempo (mm:ss) y las repeticiones incorrectas por ejercicio.
+  El servidor recalcula la penalización con la config del reto
+  (`features/submissions/review-actions.ts`) y guarda el desglose en `submissions.penalties`.
+- Rechazar exige una observación y no consume el intento del competidor.
+- La clasificación (`features/rankings/server/queries.ts`) se calcula en memoria con
+  los videos aprobados de inscripciones aprobadas: mejor tiempo por semana →
+  ranking con empates → puntos (100, 95, 90…) → acumulada.
+
 ## Pagos (SINPE manual)
 
 No hay pasarela: el competidor registra referencia + comprobante y un admin
@@ -113,4 +134,4 @@ aprueba. Inscripciones y videos extra comparten la tabla `payments` (`kind`).
 
 ## Pendiente
 
-- Elegir storage (Supabase Storage o R2) y crear cuenta Resend (dominio verificado) antes de la Fase 2.
+- Crear cuenta Resend (dominio verificado) antes de los emails de la Fase 2.

@@ -1,31 +1,32 @@
+import { Card } from "@/components/ui/card";
 import { DashboardView } from "@/features/tournaments/components/dashboard/dashboard-view";
-import {
-  MOCK_STATES,
-  getCompetitorDashboard,
-} from "@/features/tournaments/server/dashboard";
+import { getCompetitorDashboard } from "@/features/tournaments/server/dashboard";
 import { CATEGORY_LABELS } from "@/features/users/schemas";
 import { requireProfile } from "@/server/auth/dal";
 
-const isDev = process.env.NODE_ENV !== "production";
-
-export default async function DashboardPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ estado?: string }>;
-}) {
+export default async function DashboardPage() {
   const profile = await requireProfile();
-  const { estado } = await searchParams;
-  // Solo en desarrollo: ?estado=... para ver cada estado con datos de ejemplo
-  const mockState =
-    MOCK_STATES.find((state) => isDev && state === estado) ?? "approved";
-  const data = await getCompetitorDashboard(profile.id, mockState);
+  const data = await getCompetitorDashboard(profile);
+
+  if (!data) {
+    return (
+      <div className="flex flex-col gap-4 py-6">
+        <h1 className="font-display text-3xl uppercase leading-none">
+          Hola, {profile.firstName}
+        </h1>
+        <Card className="text-center text-muted">
+          Todavía no hay un torneo activo. Te avisaremos cuando abra la
+          inscripción.
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <DashboardView
       categoryLabel={CATEGORY_LABELS[profile.category]}
       data={data}
       firstName={profile.firstName}
-      mockState={isDev ? mockState : undefined}
     />
   );
 }

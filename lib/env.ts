@@ -11,6 +11,11 @@ const envSchema = z.object({
   DATABASE_URL: z.url(),
   NEXT_PUBLIC_SUPABASE_URL: z.url(),
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
+  // Supabase → Project Settings → API Keys → Secret key (sb_secret_…).
+  // Solo servidor: firma URLs de Storage. Nunca con prefijo NEXT_PUBLIC_.
+  SUPABASE_SECRET_KEY: z
+    .string()
+    .startsWith("sb_secret_", "Debe ser la secret key (sb_secret_…)"),
   // Emails separados por coma que reciben rol admin al crear su perfil.
   ADMIN_EMAILS: z
     .string()

@@ -11,13 +11,14 @@ import { ROUTES } from "@/lib/constants";
 
 type Props = {
   isSignedIn: boolean;
+  isAdmin: boolean;
   // Se recibe por props: components/ no importa features/.
   signOutAction: () => Promise<void>;
 };
 
 const btn = "button rounded-full font-semibold";
 
-export const Navbar = ({ isSignedIn, signOutAction }: Props) => {
+export const Navbar = ({ isSignedIn, isAdmin, signOutAction }: Props) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
 
@@ -26,6 +27,14 @@ export const Navbar = ({ isSignedIn, signOutAction }: Props) => {
 
   const authActions = isSignedIn ? (
     <>
+      {isAdmin && (
+        <NextLink
+          className={`${btn} button--tertiary button--sm`}
+          href={ROUTES.admin}
+        >
+          Admin
+        </NextLink>
+      )}
       <NextLink
         className={`${btn} button--primary button--sm`}
         href={ROUTES.dashboard}

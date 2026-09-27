@@ -8,136 +8,166 @@ import type {
   WeeklyRow,
 } from "../types";
 
-// TODO(Fase 5): calcular con SQL a partir de submissions aprobadas
-// (mejor final_time por usuario y reto → RANK() → points_table).
-// Mientras tanto genera datos de ejemplo deterministas.
+import { and, asc, eq } from "drizzle-orm";
 
-const NAMES: Record<Category, string[]> = {
-  female: [
-    "Marina S.",
-    "Ana R.",
-    "Valeria C.",
-    "Sofía M.",
-    "Daniela V.",
-    "Camila J.",
-    "Laura P.",
-    "María F.",
-    "Andrea L.",
-    "Paula G.",
-    "Natalia B.",
-  ],
-  male: [
-    "Juan P.",
-    "Pedro M.",
-    "Carlos R.",
-    "Luis A.",
-    "Diego H.",
-    "Andrés Q.",
-    "José V.",
-    "Marco S.",
-    "Esteban C.",
-    "Pablo N.",
-    "Kevin D.",
-  ],
-};
+import { getWeekStatus } from "@/features/tournaments/week-status";
+import { db } from "@/server/db/client";
+import {
+  challenges,
+  profiles,
+  registrations,
+  submissions,
+  tournaments,
+  tournamentWeeks,
+} from "@/server/db/schema";
 
-const WEEKS: RankingWeek[] = [
-  { number: 1, status: "closed", challengeName: "Pull up" },
-  { number: 2, status: "active", challengeName: "Muscle up" },
-  { number: 3, status: "upcoming" },
-  { number: 4, status: "upcoming" },
-];
-
-// Puntos por posición (§22). En producción vienen de points_table.
-function pointsFor(position: number) {
+// Puntos por posición (§22): 100, 95, 90… (mínimo 5).
+// TODO(Fase 5): leerlos de una points_table configurable por el admin.
+export function pointsFor(position: number) {
   return Math.max(100 - (position - 1) * 5, 5);
 }
 
-// Pseudoaleatorio determinista para que los datos no cambien entre recargas
-function noise(seed: number) {
-  const x = Math.sin(seed * 9301 + 49297) * 233280;
-
-  return x - Math.floor(x);
-}
-
-function rankBy<T>(rows: T[], score: (row: T) => number, asc: boolean) {
+// Ranking de competición: empates comparten posición (1, 2, 2, 4)
+function rank<T>(rows: T[], score: (row: T) => number, asc: boolean) {
   const sorted = [...rows].sort((a, b) =>
     asc ? score(a) - score(b) : score(b) - score(a),
   );
 
-  // Ranking de competición: empates comparten posición (1, 2, 2, 4)
-  return sorted.map((row, index) => {
-    const tiedWith = sorted.findIndex((other) => score(other) === score(row));
-
-    return { row, position: (tiedWith === -1 ? index : tiedWith) + 1 };
-  });
+  return sorted.map((row) => ({
+    row,
+    position: sorted.findIndex((other) => score(other) === score(row)) + 1,
+  }));
 }
 
+function displayName(firstName: string, lastName: string) {
+  return `${firstName} ${lastName.charAt(0)}.`;
+}
+
+// Clasificación con los resultados oficiales: solo videos aprobados (§52) y
+// el mejor resultado válido de cada competidor por semana (§29).
+// Con ~40 competidores se calcula en memoria; no hace falta tabla results.
 export async function getRankings(
   category: Category,
-  me: { id: string; name: string; category: Category },
-): Promise<Rankings> {
-  const competitors = NAMES[category].map((name, i) => ({
-    id: `${category}-${i}`,
-    name,
-  }));
+  meUserId: string,
+  now = new Date(),
+): Promise<Rankings | null> {
+  const [tournament] = await db
+    .select()
+    .from(tournaments)
+    .where(eq(tournaments.status, "active"))
+    .limit(1);
 
-  if (me.category === category) {
-    competitors.splice(3, 0, { id: me.id, name: me.name });
-  }
+  if (!tournament) return null;
+
+  const weekRows = await db
+    .select({ week: tournamentWeeks, challengeName: challenges.name })
+    .from(tournamentWeeks)
+    .leftJoin(challenges, eq(challenges.weekId, tournamentWeeks.id))
+    .where(eq(tournamentWeeks.tournamentId, tournament.id))
+    .orderBy(asc(tournamentWeeks.weekNumber));
+
+  const weeks: RankingWeek[] = weekRows.map(({ week, challengeName }) => {
+    const status = getWeekStatus(week, now);
+
+    return {
+      number: week.weekNumber,
+      status,
+      challengeName:
+        status === "upcoming" ? undefined : (challengeName ?? undefined),
+    };
+  });
+
+  const results = await db
+    .select({
+      userId: submissions.userId,
+      weekNumber: tournamentWeeks.weekNumber,
+      rawTimeMs: submissions.rawTimeMs,
+      penaltyMs: submissions.penaltyMs,
+      finalTimeMs: submissions.finalTimeMs,
+      firstName: profiles.firstName,
+      lastName: profiles.lastName,
+    })
+    .from(submissions)
+    .innerJoin(challenges, eq(challenges.id, submissions.challengeId))
+    .innerJoin(tournamentWeeks, eq(tournamentWeeks.id, challenges.weekId))
+    .innerJoin(profiles, eq(profiles.id, submissions.userId))
+    .innerJoin(
+      registrations,
+      and(
+        eq(registrations.userId, submissions.userId),
+        eq(registrations.tournamentId, tournament.id),
+      ),
+    )
+    .where(
+      and(
+        eq(tournamentWeeks.tournamentId, tournament.id),
+        eq(submissions.status, "approved"),
+        eq(registrations.status, "approved"),
+        eq(registrations.category, category),
+      ),
+    );
 
   const weekly: Record<number, WeeklyRow[]> = {};
 
-  for (const week of WEEKS.filter((w) => w.status !== "upcoming")) {
-    // En la semana activa no todos han enviado su video todavía
-    const participants =
-      week.status === "active"
-        ? competitors.filter(
-            (_, i) => i % 4 !== 3 || competitors[i].id === me.id,
-          )
-        : competitors;
+  for (const week of weeks) {
+    // Mejor resultado válido por competidor en esta semana
+    const best = new Map<string, (typeof results)[number]>();
 
-    const results = participants.map((c, i) => {
-      const seed = week.number * 100 + i + (category === "female" ? 50 : 0);
-      const rawTimeMs = Math.round((120 + i * 6 + noise(seed) * 25) * 1000);
-      const penaltyMs =
-        (noise(seed + 7) > 0.6 ? 5000 : 0) + (noise(seed + 3) > 0.8 ? 3000 : 0);
+    for (const r of results) {
+      if (r.weekNumber !== week.number || r.finalTimeMs === null) continue;
+      const current = best.get(r.userId);
 
-      return { ...c, rawTimeMs, penaltyMs, finalTimeMs: rawTimeMs + penaltyMs };
-    });
+      if (!current || r.finalTimeMs < current.finalTimeMs!)
+        best.set(r.userId, r);
+    }
 
-    weekly[week.number] = rankBy(results, (r) => r.finalTimeMs, true).map(
-      ({ row, position }) => ({
-        ...row,
-        position,
-        points: pointsFor(position),
-        isMe: row.id === me.id,
-      }),
-    );
+    if (best.size === 0) continue;
+
+    weekly[week.number] = rank(
+      Array.from(best.values()),
+      (r) => r.finalTimeMs!,
+      true,
+    ).map(({ row, position }) => ({
+      id: row.userId,
+      name: displayName(row.firstName, row.lastName),
+      isMe: row.userId === meUserId,
+      position,
+      rawTimeMs: row.rawTimeMs ?? row.finalTimeMs!,
+      penaltyMs: row.penaltyMs ?? 0,
+      finalTimeMs: row.finalTimeMs!,
+      points: pointsFor(position),
+    }));
   }
 
-  const totals = competitors.map((c) => {
-    const weekPoints = WEEKS.map(
-      (w) => weekly[w.number]?.find((r) => r.id === c.id)?.points ?? null,
+  // Acumulada (§24): suma de puntos de las semanas
+  const competitors = new Map<string, { name: string }>();
+
+  for (const rows of Object.values(weekly)) {
+    for (const r of rows) competitors.set(r.id, { name: r.name });
+  }
+
+  const totals = Array.from(competitors.entries()).map(([id, { name }]) => {
+    const weekPoints = weeks.map(
+      (w) => weekly[w.number]?.find((r) => r.id === id)?.points ?? null,
     );
 
     return {
-      ...c,
+      id,
+      name,
+      isMe: id === meUserId,
       weekPoints,
       total: weekPoints.reduce<number>((sum, p) => sum + (p ?? 0), 0),
     };
   });
 
-  const accumulated: AccumulatedRow[] = rankBy(
-    totals,
-    (r) => r.total,
-    false,
-  ).map(({ row, position }) => ({ ...row, position, isMe: row.id === me.id }));
+  const accumulated: AccumulatedRow[] = rank(totals, (r) => r.total, false).map(
+    ({ row, position }) => ({ ...row, position }),
+  );
 
   return {
-    weeks: WEEKS,
+    weeks,
     accumulated,
     weekly,
-    isFinal: WEEKS.every((w) => w.status === "closed"),
+    isFinal: weeks.length > 0 && weeks.every((w) => w.status === "closed"),
   };
 }
