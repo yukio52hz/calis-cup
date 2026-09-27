@@ -46,3 +46,26 @@ export async function createReadUrls(bucket: Bucket, paths: string[]) {
     ),
   );
 }
+
+// URL temporal (5 min) que fuerza la descarga con un nombre de archivo legible
+export async function createDownloadUrl(
+  bucket: Bucket,
+  path: string,
+  fileName: string,
+) {
+  const { data, error } = await storage(bucket).createSignedUrl(path, 5 * 60, {
+    download: fileName,
+  });
+
+  if (error) throw error;
+
+  return data.signedUrl;
+}
+
+export async function deleteFiles(bucket: Bucket, paths: string[]) {
+  if (paths.length === 0) return;
+
+  const { error } = await storage(bucket).remove(paths);
+
+  if (error) throw error;
+}

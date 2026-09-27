@@ -5,11 +5,12 @@ import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ReviewForm } from "@/features/submissions/components/review-form";
 import { SUBMISSION_STATUS } from "@/features/submissions/components/submission-status";
+import { VideoAdminActions } from "@/features/submissions/components/video-admin-actions";
 import { getSubmissionForReview } from "@/features/submissions/server/review-queries";
 import { CATEGORY_LABELS } from "@/features/users/schemas";
 import { ROUTES } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
-import { createReadUrls } from "@/server/storage/files";
+import { createDownloadUrl, createReadUrls } from "@/server/storage/files";
 
 export default async function ReviewPage({
   params,
@@ -24,9 +25,26 @@ export default async function ReviewPage({
   if (!row) notFound();
 
   const { submission, exercises } = row;
-  const videoUrl = (await createReadUrls("videos", [submission.videoPath])).get(
-    submission.videoPath,
-  );
+  const path = submission.videoPath;
+  // Nombre de archivo legible: semana-2_perez-juan_intento-1.mp4
+  const slug = (value: string) =>
+    value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+  const extension = path?.split(".").pop() ?? "mp4";
+  const [videoUrl, downloadUrl] = path
+    ? await Promise.all([
+        createReadUrls("videos", [path]).then((urls) => urls.get(path)),
+        createDownloadUrl(
+          "videos",
+          path,
+          `semana-${row.weekNumber}_${slug(row.lastName)}-${slug(row.firstName)}_intento-${submission.attemptNumber}.${extension}`,
+        ),
+      ])
+    : [undefined, null];
   const status = SUBMISSION_STATUS[submission.status];
   // Si ya se revisó, precarga los valores para poder corregir
   const counts = Object.fromEntries(
@@ -59,7 +77,9 @@ export default async function ReviewPage({
             />
           ) : (
             <Card className="text-center text-muted">
-              No se encontró el archivo del video.
+              {submission.videoDeletedAt
+                ? `Archivo eliminado el ${formatDateTime(submission.videoDeletedAt)}. El resultado se conserva.`
+                : "No se encontró el archivo del video."}
             </Card>
           )}
           <Card>
@@ -96,6 +116,13 @@ export default async function ReviewPage({
                 </dd>
               </div>
             </dl>
+            <div className="mt-4 border-t border-white/10 pt-4">
+              <VideoAdminActions
+                downloadUrl={downloadUrl}
+                hasFile={Boolean(path)}
+                submissionId={submission.id}
+              />
+            </div>
           </Card>
         </div>
 

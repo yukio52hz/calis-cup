@@ -175,8 +175,10 @@ export const submissions = pgTable(
       .notNull()
       .references(() => profiles.id, { onDelete: "cascade" }),
     attemptNumber: integer().notNull(),
-    // Ruta dentro del bucket privado "videos"
-    videoPath: text().notNull().unique(),
+    // Ruta dentro del bucket privado "videos"; null si el admin borró el archivo
+    // (el resultado se conserva)
+    videoPath: text().unique(),
+    videoDeletedAt: timestamp({ withTimezone: true }),
     fileSize: integer().notNull(),
     mimeType: text().notNull(),
     durationMs: integer(),

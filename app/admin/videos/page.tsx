@@ -22,7 +22,11 @@ const FILTERS: { value: ReviewFilter; label: string }[] = [
 export default async function AdminVideosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ estado?: string; revisado?: string }>;
+  searchParams: Promise<{
+    estado?: string;
+    revisado?: string;
+    eliminado?: string;
+  }>;
 }) {
   const params = await searchParams;
   const filter =
@@ -35,6 +39,15 @@ export default async function AdminVideosPage({
         <p className="text-xs font-bold tracking-[0.2em] text-muted">ADMIN</p>
         <h1 className="font-display text-3xl uppercase leading-none">Videos</h1>
       </header>
+
+      {params.eliminado && (
+        <p
+          className="rounded-xl bg-success/10 px-4 py-3 text-sm text-success"
+          role="status"
+        >
+          Intento eliminado.
+        </p>
+      )}
 
       {params.revisado && (
         <p

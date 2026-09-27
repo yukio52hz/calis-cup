@@ -123,6 +123,11 @@ aparezca una segunda feature, añade una zona por feature con `except` para su
   El servidor recalcula la penalización con la config del reto
   (`features/submissions/review-actions.ts`) y guarda el desglose en `submissions.penalties`.
 - Rechazar exige una observación y no consume el intento del competidor.
+- En la revisión el admin puede **descargar** el video (URL firmada de 5 min con
+  nombre legible), **borrar solo el archivo** (libera Storage; `video_path = null`,
+  `video_deleted_at` y el resultado se conserva) o **eliminar el intento** (archivo y
+  fila; deja de contar en el ranking y el competidor puede volver a subir; un
+  intento extra usado vuelve a quedar disponible).
 - La clasificación (`features/rankings/server/queries.ts`) se calcula en memoria con
   los videos aprobados de inscripciones aprobadas: mejor tiempo por semana →
   ranking con empates → puntos según `tournaments.points_by_position` / `points_beyond`

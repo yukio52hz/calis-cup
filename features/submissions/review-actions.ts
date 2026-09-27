@@ -13,6 +13,7 @@ import { ROUTES } from "@/lib/constants";
 import { requireRole } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
 import { submissions } from "@/server/db/schema";
+import { deleteFiles } from "@/server/storage/files";
 
 import {
   getNextPendingSubmissionId,
@@ -131,4 +132,41 @@ export async function reviewSubmissionAction(
   redirect(
     next ? `${ROUTES.adminVideos}/${next}` : `${ROUTES.adminVideos}?revisado=1`,
   );
+}
+
+// Libera espacio en Storage: borra el archivo y conserva el intento, su
+// tiempo y sus puntos.
+export async function deleteVideoFileAction(submissionId: string) {
+  await requireRole("admin");
+  const current = await getSubmissionForReview(submissionId);
+
+  if (!current?.submission.videoPath) return;
+
+  await deleteFiles("videos", [current.submission.videoPath]);
+  await db
+    .update(submissions)
+    .set({ videoPath: null, videoDeletedAt: new Date() })
+    .where(eq(submissions.id, submissionId));
+
+  revalidatePath(ROUTES.admin, "layout");
+  revalidatePath(ROUTES.dashboard, "layout");
+}
+
+// Borra el intento completo: archivo y resultado. Deja de contar en la
+// clasificación y, si la semana sigue abierta, el competidor puede volver a
+// subir (un intento extra usado vuelve a quedar disponible).
+export async function deleteSubmissionAction(submissionId: string) {
+  await requireRole("admin");
+  const current = await getSubmissionForReview(submissionId);
+
+  if (!current) redirect(ROUTES.adminVideos);
+
+  if (current.submission.videoPath) {
+    await deleteFiles("videos", [current.submission.videoPath]);
+  }
+  await db.delete(submissions).where(eq(submissions.id, submissionId));
+
+  revalidatePath(ROUTES.admin, "layout");
+  revalidatePath(ROUTES.dashboard, "layout");
+  redirect(`${ROUTES.adminVideos}?eliminado=1`);
 }

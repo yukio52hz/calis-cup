@@ -29,7 +29,7 @@ export default async function VideosPage() {
     : [];
   const playbackUrls = await createReadUrls(
     "videos",
-    history.map((row) => row.submission.videoPath),
+    history.flatMap((row) => row.submission.videoPath ?? []),
   );
 
   const active = eligibility.active;
@@ -134,7 +134,9 @@ export default async function VideosPage() {
           </h2>
           {history.map(({ submission, weekNumber, challengeName }) => {
             const status = SUBMISSION_STATUS[submission.status];
-            const url = playbackUrls.get(submission.videoPath);
+            const url = submission.videoPath
+              ? playbackUrls.get(submission.videoPath)
+              : undefined;
 
             return (
               <Card key={submission.id} className="flex flex-col gap-3">
@@ -163,6 +165,12 @@ export default async function VideosPage() {
                   <p className="rounded-lg bg-background/60 px-3 py-2 text-sm">
                     <span className="text-muted">Observación: </span>
                     {submission.reviewerNotes}
+                  </p>
+                )}
+                {submission.videoDeletedAt && (
+                  <p className="text-xs text-muted">
+                    El archivo del video fue eliminado por el equipo. Tu
+                    resultado se conserva.
                   </p>
                 )}
                 {url && (
