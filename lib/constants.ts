@@ -1,0 +1,15 @@
+export const ROUTES = {
+  home: "/",
+  login: "/login",
+  register: "/register",
+  forgotPassword: "/forgot-password",
+  resetPassword: "/reset-password",
+  authConfirm: "/auth/confirm",
+  onboarding: "/onboarding",
+  dashboard: "/dashboard",
+  profile: "/dashboard/profile",
+  enroll: "/dashboard/inscripcion",
+  ranking: "/dashboard/ranking",
+  videos: "/dashboard/videos",
+  admin: "/admin",
+} as const;

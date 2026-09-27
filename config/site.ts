@@ -2,68 +2,25 @@ export type SiteConfig = typeof siteConfig;
 
 export const siteConfig = {
   name: "Calis Cup",
-  description: "Make beautiful websites regardless of your design experience.",
+  description:
+    "El primer torneo online de calistenia de Costa Rica. 4 semanas · 4 retos · 1 clasificación.",
+  // Anclas de la landing; el prefijo "/" permite usarlas desde cualquier página
   navItems: [
-    {
-      label: "Home",
-      href: "/",
-    },
-    {
-      label: "Docs",
-      href: "/docs",
-    },
-    {
-      label: "Pricing",
-      href: "/pricing",
-    },
-    {
-      label: "Blog",
-      href: "/blog",
-    },
-    {
-      label: "About",
-      href: "/about",
-    },
+    { label: "Cómo funciona", href: "/#como-funciona" },
+    { label: "El torneo", href: "/#torneo" },
+    { label: "Inscripción", href: "/#inscripcion" },
+    { label: "Preguntas", href: "/#preguntas" },
   ],
-  navMenuItems: [
-    {
-      label: "Profile",
-      href: "/profile",
-    },
-    {
-      label: "Dashboard",
-      href: "/dashboard",
-    },
-    {
-      label: "Projects",
-      href: "/projects",
-    },
-    {
-      label: "Team",
-      href: "/team",
-    },
-    {
-      label: "Calendar",
-      href: "/calendar",
-    },
-    {
-      label: "Settings",
-      href: "/settings",
-    },
-    {
-      label: "Help & Feedback",
-      href: "/help-feedback",
-    },
-    {
-      label: "Logout",
-      href: "/logout",
-    },
-  ],
-  links: {
-    github: "https://github.com/heroui-inc/heroui",
-    twitter: "https://twitter.com/hero_ui",
-    docs: "https://heroui.com",
-    discord: "https://discord.gg/9b6yyZKmH4",
-    sponsor: "https://patreon.com/jrgarciadev",
-  },
+};
+
+// Datos del torneo actual mostrados en la landing (§8, §22, §25).
+// TODO: leerlos de la tabla tournaments cuando exista (Fase 2).
+export const tournamentInfo = {
+  registrationFee: 2500,
+  extraVideoFee: 500,
+  weeks: 4,
+  challenges: 4,
+  categories: 2,
+  rankings: 1,
+  points: [100, 95, 90, 85, 80],
 };

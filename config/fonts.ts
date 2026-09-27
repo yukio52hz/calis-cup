@@ -1,11 +1,13 @@
-import { Fira_Code as FontMono, Inter as FontSans } from "next/font/google";
+import { Archivo_Black, Inter } from "next/font/google";
 
-export const fontSans = FontSans({
+export const fontSans = Inter({
   subsets: ["latin"],
-  variable: "--font-sans",
+  variable: "--font-inter",
 });
 
-export const fontMono = FontMono({
+// Titulares gruesos en mayúsculas, como en los diseños de docs/ui
+export const fontDisplay = Archivo_Black({
   subsets: ["latin"],
-  variable: "--font-mono",
+  weight: "400",
+  variable: "--font-archivo-black",
 });

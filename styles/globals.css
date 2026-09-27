@@ -3,7 +3,39 @@
 
 @custom-variant dark (&:is(.dark *));
 
-@theme {
-	--font-sans: "font", sans-serif;
+@theme inline {
+	--font-sans: var(--font-inter), sans-serif;
+	--font-display: var(--font-archivo-black), var(--font-inter), sans-serif;
 	--font-mono: "monospace", monospace;
+
+	/* Bandera de Costa Rica */
+	--color-cr-blue: #002b7f;
+	--color-cr-red: #ce1126;
+}
+
+/* Tema Calis Cup (solo oscuro): fondo azul noche y acento rojo */
+.dark {
+	--background: oklch(0.16 0.012 265);
+	--surface: oklch(0.21 0.014 265);
+	--surface-secondary: oklch(0.25 0.014 265);
+	--surface-tertiary: oklch(0.28 0.014 265);
+	--overlay: oklch(0.21 0.014 265);
+	--default: oklch(0.27 0.012 265);
+	--field-background: oklch(0.25 0.014 265);
+	--field-border: oklch(1 0 0 / 0.08);
+	--field-border-width: 1px;
+	--accent: oklch(0.58 0.225 25);
+	--accent-foreground: oklch(0.99 0 0);
+	--danger: oklch(0.63 0.23 25);
+	--focus: var(--accent);
+	--radius: 0.75rem;
+}
+
+html {
+	scroll-behavior: smooth;
+}
+
+/* Deja espacio para la navbar fija al saltar a una sección (#ancla) */
+section[id] {
+	scroll-margin-top: 4.5rem;
 }

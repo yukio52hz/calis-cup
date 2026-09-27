@@ -81,6 +81,10 @@ export default defineConfig([globalIgnores([
         react: {
             version: "detect",
         },
+
+        "import/resolver": {
+            typescript: true,
+        },
     },
 
     files: ["**/*.ts", "**/*.tsx"],
@@ -123,6 +127,16 @@ export default defineConfig([globalIgnores([
             }],
 
             "newlines-between": "always",
+        }],
+
+        // Límites entre capas: ver docs/architecture/overview.md
+        "import/no-restricted-paths": ["error", {
+            zones: [
+                { target: "./server", from: ["./features", "./app", "./components"], message: "server/ es infraestructura: no depende de features ni de UI." },
+                { target: "./lib", from: ["./features", "./server", "./app"], message: "lib/ solo contiene utilidades sin dependencias de dominio." },
+                { target: "./app", from: "./server/db", message: "Accede a datos a través de features/<x>/server." },
+                { target: "./components", from: ["./features", "./server"], message: "components/ es UI global sin lógica de dominio." },
+            ],
         }],
 
         "react/self-closing-comp": "warn",
