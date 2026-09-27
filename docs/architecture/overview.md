@@ -165,6 +165,13 @@ aparezca una segunda feature, añade una zona por feature con `except` para su
 - Formulario de pago, comprobante y revisión del admin son compartidos con la
   inscripción (`features/payments`). Admin: `/admin/videos-extra`.
 
+## Competidores (admin)
+
+- `/admin/competidores`: búsqueda por nombre/email y filtros (todos, pendientes,
+  aprobados, sin inscripción). Incluye a los admins que tienen inscripción.
+- `/admin/competidores/[id]`: perfil, inscripción, puntos por semana, pagos e
+  intentos (con enlace a su revisión). Solo lectura.
+
 ## Emails (Resend)
 
 - `server/email/`: plantilla HTML con estilos inline (`layout.ts`) y `sendEmail()`

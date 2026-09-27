@@ -9,7 +9,11 @@ export default async function AdminDashboardPage() {
   const stats = await getAdminStats();
 
   const tiles = [
-    { label: "Competidores", value: stats.competitors, href: null },
+    {
+      label: "Competidores",
+      value: stats.competitors,
+      href: ROUTES.adminCompetitors,
+    },
     {
       label: "Inscripciones pendientes",
       value: stats.registrationsPending,

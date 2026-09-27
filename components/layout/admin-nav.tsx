@@ -10,7 +10,7 @@ const items = [
   { href: "/admin/videos", label: "Videos" },
   { href: "/admin/inscripciones", label: "Inscripciones" },
   { href: "/admin/videos-extra", label: "Videos extra" },
-  { href: null, label: "Competidores" },
+  { href: "/admin/competidores", label: "Competidores" },
   { href: "/admin/torneo", label: "Torneo" },
 ];
 
