@@ -3,6 +3,7 @@ import type { PublicTournamentInfo } from "@/features/tournaments/server/public-
 import NextLink from "next/link";
 
 import { BrandBackground } from "@/components/layout/brand-background";
+import { LogoMark } from "@/components/layout/logo";
 import { ROUTES } from "@/lib/constants";
 
 export function Hero({ info }: { info: PublicTournamentInfo }) {
@@ -17,7 +18,13 @@ export function Hero({ info }: { info: PublicTournamentInfo }) {
     <section className="relative isolate overflow-hidden">
       <BrandBackground />
 
-      <div className="mx-auto flex max-w-7xl flex-col gap-8 px-4 pb-16 pt-12 sm:pt-20 md:px-6">
+      <div className="relative mx-auto flex max-w-7xl flex-col gap-8 px-4 pb-16 pt-10 sm:pt-20 md:px-6">
+        {/* Emblema: grande a la derecha en escritorio, pequeño arriba en móvil */}
+        <LogoMark
+          priority
+          className="pointer-events-none absolute right-6 top-16 hidden w-[min(34vw,440px)] drop-shadow-[0_20px_60px_rgba(225,29,46,0.35)] lg:block"
+        />
+        <LogoMark className="w-24 lg:hidden" />
         <p className="inline-flex w-fit items-center gap-2 rounded-full border border-accent/40 bg-accent/10 px-4 py-1.5 text-xs font-bold tracking-widest">
           <span className="font-display text-[0.65rem]">CR</span>
           COSTA RICA CALIS CUP

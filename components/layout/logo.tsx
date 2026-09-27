@@ -1,10 +1,31 @@
+import Image from "next/image";
 import clsx from "clsx";
 
-// Wordmark provisional. Reemplazar por el logo oficial (CIC) cuando esté en /public.
+// Emblema oficial "CIC" (public/img/logo.png, fondo transparente)
+export function LogoMark({
+  className,
+  priority,
+}: {
+  className?: string;
+  priority?: boolean;
+}) {
+  return (
+    <Image
+      alt="Costa Rica Calis Cup"
+      className={clsx("h-auto", className)}
+      height={555}
+      priority={priority}
+      src="/img/logo.png"
+      width={672}
+    />
+  );
+}
+
+// Emblema + nombre, para la navbar
 export function Logo({ className }: { className?: string }) {
   return (
     <span className={clsx("flex items-center gap-2", className)}>
-      <FlagMark />
+      <LogoMark priority className="w-10" />
       <span className="flex flex-col leading-none">
         <span className="text-[0.55rem] font-semibold tracking-[0.25em] text-muted">
           COSTA RICA

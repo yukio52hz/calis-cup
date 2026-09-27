@@ -1,4 +1,4 @@
-import { FlagMark } from "@/components/layout/logo";
+import { FlagMark, LogoMark } from "@/components/layout/logo";
 
 export function AuthCard({
   title,
@@ -15,6 +15,7 @@ export function AuthCard({
     <div className="flex w-full max-w-md flex-col gap-4">
       <div className="rounded-3xl border border-white/10 bg-surface/80 p-6 shadow-2xl backdrop-blur-md sm:p-8 max-[359px]:p-5">
         <div className="mb-6 flex flex-col gap-3">
+          <LogoMark className="w-20" />
           <p className="flex items-center gap-2 text-[0.65rem] font-bold tracking-[0.25em] text-muted">
             <FlagMark className="h-4 w-1.5" />
             COSTA RICA CALIS CUP
