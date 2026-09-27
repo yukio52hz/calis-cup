@@ -19,7 +19,10 @@ const envSchema = z.object({
   // URL pública de la app, para los enlaces de los emails
   APP_URL: z.url().default("http://localhost:3000"),
   // Resend: sin clave, los emails se registran en consola y no se envían
-  RESEND_API_KEY: z.string().startsWith("re_").optional(),
+  RESEND_API_KEY: z
+    .string()
+    .startsWith("re_", "Debe ser una API key de Resend (re_…)")
+    .optional(),
   // Remitente de un dominio verificado en Resend. onboarding@resend.dev solo
   // entrega al email dueño de la cuenta de Resend (útil para probar).
   EMAIL_FROM: z.string().default("Calis Cup <onboarding@resend.dev>"),
@@ -35,4 +38,31 @@ const envSchema = z.object({
     ),
 });
 
-export const env = envSchema.parse(process.env);
+// Tolera errores típicos al copiar variables en el panel de Vercel:
+// espacios o saltos de línea, comillas envolventes y valores vacíos
+// (vacío = no definida, para que apliquen los valores por defecto).
+function clean(value: string | undefined) {
+  const trimmed = value
+    ?.trim()
+    .replace(/^(["'])(.*)\1$/, "$2")
+    .trim();
+
+  return trimmed ? trimmed : undefined;
+}
+
+const parsed = envSchema.safeParse(
+  Object.fromEntries(
+    Object.keys(envSchema.shape).map((key) => [key, clean(process.env[key])]),
+  ),
+);
+
+if (!parsed.success) {
+  // Solo nombres y motivos: nunca imprimir los valores (son secretos)
+  const problems = parsed.error.issues
+    .map((issue) => `  - ${issue.path.join(".")}: ${issue.message}`)
+    .join("\n");
+
+  throw new Error(`Variables de entorno inválidas:\n${problems}`);
+}
+
+export const env = parsed.data;
