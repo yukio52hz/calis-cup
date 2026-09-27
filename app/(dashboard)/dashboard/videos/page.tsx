@@ -16,7 +16,7 @@ import {
 import { ROUTES } from "@/lib/constants";
 import { formatDateTime, formatDuration, formatTimeLeft } from "@/lib/format";
 import { requireProfile } from "@/server/auth/dal";
-import { createVideoPlaybackUrls } from "@/server/storage/videos";
+import { createReadUrls } from "@/server/storage/files";
 
 export default async function VideosPage() {
   const profile = await requireProfile();
@@ -27,7 +27,8 @@ export default async function VideosPage() {
   const history = tournament
     ? await listMySubmissions(tournament.id, profile.id)
     : [];
-  const playbackUrls = await createVideoPlaybackUrls(
+  const playbackUrls = await createReadUrls(
+    "videos",
     history.map((row) => row.submission.videoPath),
   );
 

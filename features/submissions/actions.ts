@@ -7,7 +7,7 @@ import { MAX_VIDEO_BYTES, ROUTES } from "@/lib/constants";
 import { requireProfile } from "@/server/auth/dal";
 import { db } from "@/server/db/client";
 import { submissions } from "@/server/db/schema";
-import { createVideoUploadUrl, videoExists } from "@/server/storage/videos";
+import { createUploadUrl, fileExists } from "@/server/storage/files";
 
 import { BLOCKED_MESSAGES, getUploadEligibility } from "./server/eligibility";
 
@@ -57,7 +57,7 @@ export async function requestVideoUploadAction(
   const extension = EXTENSIONS[parsed.data.type] ?? "mp4";
   const path = `${userFolder(tournamentId, active.week.weekNumber, profile.id)}attempt-${nextAttempt}-${crypto.randomUUID()}.${extension}`;
 
-  return { ok: true, path, signedUrl: await createVideoUploadUrl(path) };
+  return { ok: true, path, signedUrl: await createUploadUrl("videos", path) };
 }
 
 // Paso 2: tras la subida, verifica el archivo y registra el intento (§42)
@@ -93,7 +93,7 @@ export async function confirmVideoUploadAction(
   ) {
     return { ok: false, message: "Ruta de video inválida." };
   }
-  if (!(await videoExists(path))) {
+  if (!(await fileExists("videos", path))) {
     return {
       ok: false,
       message: "No encontramos el video subido. Inténtalo de nuevo.",

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { UploadIcon, VideoIcon } from "@/components/ui/icons";
 import { MAX_VIDEO_BYTES } from "@/lib/constants";
+import { formatMb, uploadWithProgress } from "@/lib/upload";
 
 import { confirmVideoUploadAction, requestVideoUploadAction } from "../actions";
 
@@ -16,10 +17,6 @@ type Status =
   | { step: "uploading"; progress: number }
   | { step: "confirming" }
   | { step: "error"; message: string };
-
-function formatMb(bytes: number) {
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-}
 
 function readDuration(url: string) {
   return new Promise<number | null>((resolve) => {
@@ -34,40 +31,6 @@ function readDuration(url: string) {
       );
     video.onerror = () => resolve(null);
     video.src = url;
-  });
-}
-
-// PUT directo a Storage con XHR para poder mostrar el progreso
-// (mismo formato que storage-js uploadToSignedUrl)
-function uploadWithProgress(
-  signedUrl: string,
-  file: File,
-  onProgress: (percent: number) => void,
-  signal: AbortSignal,
-) {
-  return new Promise<void>((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    const body = new FormData();
-
-    body.append("cacheControl", "3600");
-    body.append("", file);
-
-    xhr.open("PUT", signedUrl);
-    xhr.setRequestHeader("x-upsert", "false");
-    xhr.upload.onprogress = (event) => {
-      if (event.lengthComputable)
-        onProgress(Math.round((event.loaded / event.total) * 100));
-    };
-    xhr.onload = () =>
-      xhr.status >= 200 && xhr.status < 300
-        ? resolve()
-        : reject(new Error(`Error ${xhr.status} al subir el video`));
-    xhr.onerror = () =>
-      reject(new Error("Se perdió la conexión durante la subida."));
-    xhr.onabort = () =>
-      reject(new DOMException("Subida cancelada", "AbortError"));
-    signal.addEventListener("abort", () => xhr.abort());
-    xhr.send(body);
   });
 }
 

@@ -1,4 +1,5 @@
 import {
+  date,
   integer,
   jsonb,
   pgEnum,
@@ -81,6 +82,39 @@ export const challengeExercises = pgTable("challenge_exercises", {
   sortOrder: integer().notNull().default(0),
 }).enableRLS();
 
+export const paymentKindEnum = pgEnum("payment_kind", [
+  "registration",
+  "extra_video",
+]);
+
+export const paymentStatusEnum = pgEnum("payment_status", [
+  "pending_review",
+  "approved",
+  "rejected",
+]);
+
+// Pagos SINPE revisados a mano (§9, §26). Compartida por inscripción y video extra.
+export const payments = pgTable("payments", {
+  id: uuid().primaryKey().defaultRandom(),
+  kind: paymentKindEnum().notNull(),
+  tournamentId: uuid()
+    .notNull()
+    .references(() => tournaments.id, { onDelete: "cascade" }),
+  userId: uuid()
+    .notNull()
+    .references(() => profiles.id, { onDelete: "cascade" }),
+  amount: integer().notNull(),
+  reference: text().notNull(),
+  paidOn: date({ mode: "string" }).notNull(),
+  // Ruta dentro del bucket privado "receipts"
+  receiptPath: text().notNull(),
+  status: paymentStatusEnum().notNull().default("pending_review"),
+  rejectionReason: text(),
+  reviewedBy: uuid().references(() => profiles.id),
+  reviewedAt: timestamp({ withTimezone: true }),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+}).enableRLS();
+
 export const registrationStatusEnum = pgEnum("registration_status", [
   "pending_review",
   "approved",
@@ -100,6 +134,8 @@ export const registrations = pgTable(
       .references(() => profiles.id, { onDelete: "cascade" }),
     category: categoryEnum().notNull(),
     status: registrationStatusEnum().notNull().default("pending_review"),
+    // Último pago enviado; si se rechaza, el competidor envía uno nuevo
+    paymentId: uuid().references(() => payments.id),
     rejectionReason: text(),
     reviewedBy: uuid().references(() => profiles.id),
     reviewedAt: timestamp({ withTimezone: true }),

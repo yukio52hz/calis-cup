@@ -13,7 +13,11 @@ export const ROUTES = {
   videos: "/dashboard/videos",
   admin: "/admin",
   adminVideos: "/admin/videos",
+  adminRegistrations: "/admin/inscripciones",
 } as const;
 
 // Límite por archivo del plan Free de Supabase (también en el bucket "videos")
 export const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
+
+// Comprobantes SINPE: imagen o PDF (también en el bucket "receipts")
+export const MAX_RECEIPT_BYTES = 5 * 1024 * 1024;

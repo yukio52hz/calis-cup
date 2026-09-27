@@ -9,7 +9,7 @@ import { getSubmissionForReview } from "@/features/submissions/server/review-que
 import { CATEGORY_LABELS } from "@/features/users/schemas";
 import { ROUTES } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
-import { createVideoPlaybackUrls } from "@/server/storage/videos";
+import { createReadUrls } from "@/server/storage/files";
 
 export default async function ReviewPage({
   params,
@@ -24,7 +24,7 @@ export default async function ReviewPage({
   if (!row) notFound();
 
   const { submission, exercises } = row;
-  const videoUrl = (await createVideoPlaybackUrls([submission.videoPath])).get(
+  const videoUrl = (await createReadUrls("videos", [submission.videoPath])).get(
     submission.videoPath,
   );
   const status = SUBMISSION_STATUS[submission.status];

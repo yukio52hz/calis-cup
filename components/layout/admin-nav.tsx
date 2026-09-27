@@ -8,7 +8,7 @@ import clsx from "clsx";
 const items = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/videos", label: "Videos" },
-  { href: null, label: "Inscripciones" },
+  { href: "/admin/inscripciones", label: "Inscripciones" },
   { href: null, label: "Competidores" },
   { href: null, label: "Torneo" },
 ];

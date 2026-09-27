@@ -13,7 +13,7 @@ export default async function AdminDashboardPage() {
     {
       label: "Inscripciones pendientes",
       value: stats.registrationsPending,
-      href: null,
+      href: ROUTES.adminRegistrations,
       highlight: stats.registrationsPending > 0,
     },
     {
@@ -24,8 +24,9 @@ export default async function AdminDashboardPage() {
     },
     {
       label: "Pagos pendientes",
-      value: stats.pendingPayments ?? "—",
-      href: null,
+      value: stats.pendingPayments,
+      href: ROUTES.adminRegistrations,
+      highlight: stats.pendingPayments > 0,
     },
     {
       label: "Semana activa",

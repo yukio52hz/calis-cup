@@ -127,10 +127,16 @@ aparezca una segunda feature, añade una zona por feature con `except` para su
   los videos aprobados de inscripciones aprobadas: mejor tiempo por semana →
   ranking con empates → puntos (100, 95, 90…) → acumulada.
 
-## Pagos (SINPE manual)
+## Inscripción y pagos (SINPE manual)
 
-No hay pasarela: el competidor registra referencia + comprobante y un admin
-aprueba. Inscripciones y videos extra comparten la tabla `payments` (`kind`).
+- Competidor: `/dashboard/inscripcion` muestra costo y número SINPE; registra monto,
+  referencia, fecha y comprobante (bucket privado `receipts`: imagen/PDF, 5 MB,
+  subida directa con URL firmada).
+- Cada envío crea una fila en `payments` (`kind`: `registration` | `extra_video`) y
+  deja `registrations.status = pending_review` apuntando a ese pago (`payment_id`).
+  Si se rechaza, el competidor envía un pago nuevo (se conserva el historial).
+- Admin: `/admin/inscripciones` (bandeja) y `/admin/inscripciones/[id]` (comprobante,
+  aviso si el monto no coincide, aprobar/rechazar con motivos rápidos del §10).
 
 ## Pendiente
 
