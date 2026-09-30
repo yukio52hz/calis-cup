@@ -31,6 +31,16 @@ function parseTime(value: string) {
   return match ? (Number(match[1]) * 60 + Number(match[2])) * 1000 : null;
 }
 
+// El teclado numérico en móvil no tiene ":", así que se inserta solo:
+// "023" → "0:23", "0234" → "02:34"
+function maskTime(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 4);
+
+  return digits.length > 2
+    ? `${digits.slice(0, -2)}:${digits.slice(-2)}`
+    : digits;
+}
+
 export function ReviewForm({
   submissionId,
   exercises,
@@ -76,7 +86,12 @@ export function ReviewForm({
       className="flex flex-col gap-5"
       validationErrors={state.errors}
     >
-      <TextField fullWidth name="rawTime" value={rawTime} onChange={setRawTime}>
+      <TextField
+        fullWidth
+        name="rawTime"
+        value={rawTime}
+        onChange={(value) => setRawTime(maskTime(value))}
+      >
         <Label>Tiempo registrado (mm:ss)</Label>
         <Input
           className="font-display text-2xl"

@@ -83,7 +83,7 @@ export async function signUpAction(
     email,
     password,
     options: {
-      emailRedirectTo: await confirmUrl(ROUTES.onboarding),
+      emailRedirectTo: await confirmUrl(`${ROUTES.onboarding}?confirmado=1`),
       // Se usa para precargar el paso "Completar perfil".
       data: { first_name: firstName, last_name: lastName, category },
     },
